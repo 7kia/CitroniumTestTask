@@ -11,7 +11,7 @@ class GameData {
     public time: number;
     public leadingPlayerId: number;
     public winPlayerId: number;
-    constructor(data: any) {
+    public constructor(data: any) {
         this.id = data.id;
         this.creatorGameId = data.creatorGameId;
         this.participantId = data.participantId;

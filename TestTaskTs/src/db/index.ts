@@ -5,7 +5,8 @@ import * as promise from "bluebird";
 import {IDatabase, IMain, IOptions} from "pg-promise";
 import * as pgPromise from "pg-promise";
 
-import { IExtensions, UserRepository} from "./repository";
+import { IExtensions, UserRepository} from "./repositories";
+import {Repository} from "./repositories/Repository";
 
 // pg-promise initialization options:
 const initOptions: IOptions<IExtensions> = {
@@ -18,7 +19,10 @@ const initOptions: IOptions<IExtensions> = {
         // Do not use "require()" here, because this event occurs for every task
         // and transaction being executed, which should be as fast as possible.
         obj.users = new UserRepository(obj, pgp);
-    }
+        // obj.findUser = (searchParam) => {
+        //     return obj.one(Repository.getSelectQueueString("User", searchParam));
+        // };
+    },
     // extend: obj => {
     //     obj.users  => {
     //         return new UserRepository(obj, pgp);
@@ -40,5 +44,7 @@ const pgp: IMain = pgPromise(initOptions);
 // Create the database instance with extensions:
 const db = pgp(config) as IDatabase<IExtensions> & IExtensions;
 
-export {db};
+export {
+    db,
+};
 
