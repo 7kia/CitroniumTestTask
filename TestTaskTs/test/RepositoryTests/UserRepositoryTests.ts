@@ -10,27 +10,12 @@ import $ from "jquery";
 
 describe("UserRepository. " +
     "Позволяет брать и редактировать данные пользователей.", () => {
-    it("Можно найти пользователя по различным характеристикам.", () => {
+    it("Можно найти пользователя по различным характеристикам.", async () => {
+      const user: User = await db.db.users.findUser( { id: "0" } );
+      const user2: User = await db.db.users.findUser( { email: "e2.e@com", name: "Player2" } );
 
-      const test = async () => {
-        const user: User = await db.db.users.findUser( { id: "0" } );
-        const user2 = await db.db.users.findUser( { email: "e2.e@com", name: "Player2" } );
-
-        console.log(user.id);
-
-        console.log(user.id === 2);
-        console.log(user2.id === 2);
-        assert.strintEqual(user.id, 2);
-        assert.strintEqual(user2.id, 1);
-
-      };
-      assert.doesNotThrow(
-        () => {
-          test();
-          },
-        Error,
-      );
-
+      assert.equal(user.id, 0);
+      assert.equal(user2.id, 1);
     });
 
 });
