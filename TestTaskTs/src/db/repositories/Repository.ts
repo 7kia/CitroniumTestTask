@@ -3,29 +3,71 @@
  */
 
 export class Repository {
-    public static getSelectQueueString(
-        searchPlace: string,
-        criterias: {[id: string]: string},
-    ): string {
-        const stringCriteria: string = Repository.generateCriteriaString(criterias);
+  public static getSelectQueueString(
+      searchPlace: string,
+      criterias: {[id: string]: string},
+  ): string {
+      const stringCriteria: string = Repository.generateCriteriaString(criterias);
 
-        return "SELECT * FROM public.\"" + searchPlace + "\" " +
-            "WHERE " + stringCriteria;
-    }
-
-    public static generateCriteriaString(criterias: {[id: string]: string}): string {
-        let stringCriteria: string = "";
-        let index = 1;
-        for (const key in criterias) {
-            if (criterias.hasOwnProperty(key)) {
-                if (stringCriteria.length > 1) {
-                    stringCriteria = stringCriteria + " and ";
-                }
-                stringCriteria = stringCriteria + key + "=\'"  + criterias[key] + "\'";
-                // criterias[key]
-            }
+      return "SELECT * FROM public.\"" + searchPlace + "\" " +
+          "WHERE " + stringCriteria;
+  }
+  public static generateCriteriaString(criterias: {[id: string]: string}): string {
+    let stringCriteria: string = "";
+    for (const key in criterias) {
+      if (criterias.hasOwnProperty(key)) {
+        if (stringCriteria.length > 1) {
+          stringCriteria = stringCriteria + " and ";
         }
-
-        return stringCriteria;
+        stringCriteria = stringCriteria + key + "=\'"  + criterias[key] + "\'";
+      }
     }
+
+    return stringCriteria;
+  }
+  public static getInsertQueueString(
+    insertPlace: string,
+    data: {[id: string]: string},
+  ): string {
+      const valueString: string = Repository.generateValueString(data);
+      const propertyString: string = Repository.generatePropertyString(data);
+
+      return "INSERT INTO public.\"" + insertPlace + "\"("
+        + propertyString + ")"
+        + "VALUES (" + valueString + ")";
+  }
+  public static generateValueString(data: {[id: string]: string}): string {
+    let valueString: string = "";
+    for (const key in data) {
+      if (data.hasOwnProperty(key)) {
+        if (valueString.length > 1) {
+          valueString = valueString + ", ";
+        }
+        valueString = valueString + "\'" + data[key] + "\'";
+      }
+    }
+
+    return valueString;
+  }
+  public static generatePropertyString(data: {[id: string]: string}): string {
+    let propertyString: string = "";
+    for (const key in data) {
+      if (data.hasOwnProperty(key)) {
+        if (propertyString.length > 1) {
+          propertyString = propertyString + ", ";
+        }
+        propertyString = propertyString + key;
+      }
+    }
+
+    return propertyString;
+  }
+  public static getDeleteQueueString(
+    insertPlace: string,
+    criterias: {[id: string]: string},
+  ): string {
+    const stringCriteria: string = Repository.generateCriteriaString(criterias);
+    return "DELETE FROM public.\"" + insertPlace + "\" "
+      + "WHERE " + stringCriteria + "";
+  }
 }

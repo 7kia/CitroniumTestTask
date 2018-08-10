@@ -19,7 +19,7 @@ const initOptions: IOptions<IExtensions> = {
         // Do not use "require()" here, because this event occurs for every task
         // and transaction being executed, which should be as fast as possible.
         obj.users = new UserRepository(obj, pgp);
-        // obj.findUser = (searchParam) => {
+        // obj.find = (searchParam) => {
         //     return obj.one(Repository.getSelectQueueString("User", searchParam));
         // };
     },

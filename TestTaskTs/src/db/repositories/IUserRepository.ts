@@ -4,7 +4,9 @@
 import {User} from "../Entity/User";
 
 interface IUserRepository {
-    findUser(searchParam: {[id: string]: string}): User ;
+    find(searchParam: {[id: string]: string}): User;
+    create(parameters: {[id: string]: string});
+    deleteUser(parameters: {[id: string]: string});
 }
 
 export {

@@ -43,4 +43,28 @@ describe("Класс Repository. " +
             "WHERE id=\'2\' and name=\'Player1\' and email=\'e@e.com\'",
         );
     });
+    it("Может генерировать строку с INSERT запросом.", () => {
+        assert.strictEqual(
+          Repository.getInsertQueueString("User", {id: "1"}),
+          "INSERT INTO public.\"User\"(id)"
+          + "VALUES ('1')",
+        );
+        assert.strictEqual(
+          Repository.getInsertQueueString("Player", {name: "Player1", email: "e4@e.com"}),
+          "INSERT INTO public.\"Player\"(name, email)"
+          + "VALUES ('Player1', 'e4@e.com')",
+        );
+    });
+    it("Может генерировать строку с DELETE запросом.", () => {
+        assert.strictEqual(
+          Repository.getDeleteQueueString("User", {id: "1"}),
+          "DELETE FROM public.\"User\" "
+          + "WHERE id=\'1\'",
+        );
+        assert.strictEqual(
+          Repository.getDeleteQueueString("Player", {name: "Player1", email: "e4@e.com"}),
+          "DELETE FROM public.\"Player\" "
+          + "WHERE name=\'Player1\' and email=\'e4@e.com\'",
+        );
+    });
 });
