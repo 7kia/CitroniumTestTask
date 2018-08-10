@@ -5,7 +5,8 @@ import {IDatabase, IMain} from "pg-promise";
 
 import {IUserRepository, User} from "./IUserRepository";
 import {Repository} from "./Repository";
-import extend from "jquery";
+import {Helpers} from "../../Helpers";
+import {logger} from "../../Logger";
 
 class UserRepository implements IUserRepository {
     private db: IDatabase<any>;
@@ -17,48 +18,33 @@ class UserRepository implements IUserRepository {
 
 
     public async findUser(searchParam: {[id: string]: string}): User {
-      function copy(mainObj): any {
-        let objCopy = {}; // objCopy will store a copy of the mainObj
-        let key;
-
-        for (key in mainObj) {
-          objCopy[key] = mainObj[key]; // copies each property to the objCopy object
-        }
-        return objCopy;
-      }
-
-        let properties: object = {};
-
-        const promise = await this.db.one(Repository.getSelectQueueString("User", searchParam))
+      let properties: object = {};
+      const promise = await this.db.one(Repository.getSelectQueueString("User", searchParam))
         .then((data) => {
-            const datas =  {
-              id: data.id,
-              name: data.name,
-              email: data.email,
-              password: data.password,
-              accessToken: data.accessToken,
-            };
-            properties = copy(datas);
-          return new User(
-            properties.id,
-            properties.name,
-            properties.email,
-            properties.password,
-            properties.accessToken,
-          );
+          const datas =  {
+            id: data.id,
+            name: data.name,
+            email: data.email,
+            password: data.password,
+            accessToken: data.accessToken,
+          };
+          properties = Helpers.copyByValue(datas);
         })
         .catch((error) => {
-            console.log("ERROR:", error);
+          logger.error(error);
         });
-
-
-        return new User(
-          properties.id,
-          properties.name,
-          properties.email,
-          properties.password,
-          properties.accessToken,
-        );
+      const foundUser: User = new User(
+        properties.id,
+        properties.name,
+        properties.email,
+        properties.password,
+        properties.accessToken,
+      );
+      logger.info(
+        "Found user with " + properties.id
+        + ". Search parameters:" + Repository.generateCriteriaString(searchParam),
+      );
+      return foundUser;
     }
 
 }

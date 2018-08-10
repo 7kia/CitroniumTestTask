@@ -12,6 +12,7 @@
     "grunt": "grunt"
   },
   "dependencies": {
+    "@types/winston": "^2.3.9",
     "bluebird": "^3.5.0",
     "body-parser": "^1.18.2",
     "cookie-parser": "^1.4.3",
@@ -21,7 +22,8 @@
     "pg-promise": "^8.4.5",
     "pino": "^4.17.5",
     "source-map-support": "^0.4.15",
-    "swagger-express-middleware": "^1.0.0-alpha.12"
+    "swagger-express-middleware": "^1.0.0-alpha.12",
+    "winston": "^3.0.0"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.22",
