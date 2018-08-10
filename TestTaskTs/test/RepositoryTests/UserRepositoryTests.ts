@@ -5,7 +5,6 @@ import { assert } from "chai";
 import "mocha";
 import db = require("../../src/db");
 import {User} from "../../src/db/Entity/User";
-import {Repository} from "../../src/db/repositories/Repository";
 import * as pgPromise from "pg-promise";
 import QueryResultError = pgPromise.errors.QueryResultError;
 
@@ -43,7 +42,8 @@ describe("UserRepository. " +
     assert.strictEqual(foundUser.password, userData.password);
 
     await db.db.users.deleteUser( userData );
-    // assert.throw(
+    // TODO : не ловит исключение
+    // assert.throws(
     //   async () => {
     //     await db.db.users.find( userData );
     //   },

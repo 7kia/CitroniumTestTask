@@ -7,6 +7,8 @@ import {IUserRepository, User} from "./IUserRepository";
 import {Repository} from "./Repository";
 import {Helpers} from "../../Helpers";
 import {logger} from "../../Logger";
+import * as pgPromise from "pg-promise";
+import QueryResultError = pgPromise.errors.QueryResultError;
 
 class UserRepository implements IUserRepository {
     private db: IDatabase<any>;
@@ -20,27 +22,21 @@ class UserRepository implements IUserRepository {
       let properties: object = {};
       await this.db.one(Repository.getSelectQueueString("User", searchParameters))
         .then((data) => {
-          const datas =  {
+          const foundData =  {
             id: data.id,
             name: data.name,
             email: data.email,
             password: data.password,
-            accessToken: data.accessToken,
+            access_token: data.access_token,
           };
-          properties = Helpers.copyByValue(datas);
+          properties = Helpers.copyByValue(foundData);
         })
         .catch((error) => {
           logger.error("Error to SELECT queue.");
           logger.error(error);
-          throw error;
+          throw new QueryResultError(error);
         });
-      const foundUser: User = new User(
-        properties.id,
-        properties.name,
-        properties.email,
-        properties.password,
-        properties.accessToken,
-      );
+      const foundUser: User = new User(properties);
       logger.info(
         "Found user with id=" + properties.id
         + ". Search parameters:" + Repository.generateCriteriaString(searchParameters),
@@ -49,7 +45,6 @@ class UserRepository implements IUserRepository {
     }
 
   public async create(parameters: {[id: string]: string}) {
-    let properties: object = {};
     await this.db.none(Repository.getInsertQueueString("User", parameters))
       .then((data) => {
         logger.info(
@@ -67,14 +62,14 @@ class UserRepository implements IUserRepository {
     let properties: object = {};
     await this.db.result(Repository.getDeleteQueueString("User", searchParameters))
       .then((result) => {
-        const datas =  {
+        const foundData =  {
           id: result.id,
           name: result.name,
           email: result.email,
           password: result.password,
-          accessToken: result.accessToken,
+          access_token: result.access_token,
         };
-        properties = Helpers.copyByValue(datas);
+        properties = Helpers.copyByValue(foundData);
       })
       .catch((error) => {
         logger.error("Error to DELETE queue.");

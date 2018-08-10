@@ -1,7 +1,7 @@
 /**
  * Created by Илья on 07.08.2018.
  */
-class GameData {
+export class Game {
     public id: number;
     public creatorGameId: number;
     public participantId: number;
@@ -11,17 +11,15 @@ class GameData {
     public time: number;
     public leadingPlayerId: number;
     public winPlayerId: number;
-    public constructor(data: any) {
+    constructor(data: any) {
         this.id = data.id;
-        this.creatorGameId = data.creatorGameId;
-        this.participantId = data.participantId;
-        this.fieldSize = data.fieldSize;
+        this.creatorGameId = data.creator_game_id;
+        this.participantId = data.participant_id;
+        this.fieldSize = data.field_size;
         this.field = data.field;
-        this.accessToken = data.accessToken;
+        this.accessToken = data.access_token;
         this.time = data.time;
-        this.leadingPlayerId = data.leadingPlayerId;
-        this.winPlayerId = data.winPlayerId;
+        this.leadingPlayerId = data.leading_player_id;
+        this.winPlayerId = data.win_player_id;
     }
 }
-
-export = GameData;

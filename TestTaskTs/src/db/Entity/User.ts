@@ -7,17 +7,11 @@ export class User {
     public email: string;
     public password: string;
     public accessToken: string;
-    constructor(
-        id: number,
-        name: string,
-        email: string,
-        password: string,
-        accessToken: string
-    ) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.password = password;
-        this.accessToken = accessToken;
+    constructor(data: any) {
+        this.id = data.id;
+        this.name = data.name;
+        this.email = data.email;
+        this.password = data.password;
+        this.accessToken = data.access_token;
     }
 }
