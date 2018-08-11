@@ -10,55 +10,52 @@ import {logger} from "../../Logger";
 import * as pgPromise from "pg-promise";
 import QueryResultError = pgPromise.errors.QueryResultError;
 
-class UserRepository implements IUserRepository {
-    private db: IDatabase<any>;
-    private pgp: IMain;
-    public constructor(db: any, pgp: IMain) {
-        this.db = db;
-        this.pgp = pgp;
-    }
+class UserRepository extends Repository implements IUserRepository {
+  public constructor(db: any, pgp: IMain) {
+    super(db, pgp);
+  }
 
-    public async find(searchParameters: {[id: string]: string}): User {
-      let properties: object = {};
-      await this.db.one(Repository.getSelectQueueString("User", searchParameters))
-        .then((data) => {
-          const foundData =  {
-            id: data.id,
-            name: data.name,
-            email: data.email,
-            password: data.password,
-            access_token: data.access_token,
-          };
-          properties = Helpers.copyByValue(foundData);
-        })
-        .catch((error) => {
-          logger.error("Error to SELECT queue.");
-          logger.error(error);
-          throw new QueryResultError(error);
-        });
-      const foundUser: User = new User(properties);
-      logger.info(
-        "Found user with id=" + properties.id
-        + ". Search parameters:" + Repository.generateCriteriaString(searchParameters),
-      );
-      return foundUser;
-    }
+  public async find(searchParameters: {[id: string]: any}): User {
+    let properties: object = {};
+    await this.db.one(Repository.getSelectQueueString("User", searchParameters))
+      .then((data) => {
+        const foundData =  {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          access_token: data.access_token,
+        };
+        properties = Helpers.copyByValue(foundData);
+      })
+      .catch((error: Error) => {
+        logger.error("Error to SELECT queue.");
+        logger.error(error);
+        throw new QueryResultError(error);
+      });
+    const foundUser: User = new User(properties);
+    logger.info(
+      "Found user with id=" + properties.id
+      + ". Search parameters:" + Repository.generateCriteriaString(searchParameters),
+    );
+    return foundUser;
+  }
 
-  public async create(parameters: {[id: string]: string}) {
+  public async create(parameters: {[id: string]: any}) {
     await this.db.none(Repository.getInsertQueueString("User", parameters))
       .then((data) => {
         logger.info(
           "Create user. Creation parameters:" + Repository.generateCriteriaString(parameters),
         );
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         logger.error("Error to INSERT queue.");
         logger.error(error);
         throw error;
       });
   }
 
-  public async deleteUser(searchParameters: {[id: string]: string}) {
+  public async deleteUser(searchParameters: {[id: string]: any}) {
     let properties: object = {};
     await this.db.result(Repository.getDeleteQueueString("User", searchParameters))
       .then((result) => {
@@ -71,7 +68,7 @@ class UserRepository implements IUserRepository {
         };
         properties = Helpers.copyByValue(foundData);
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         logger.error("Error to DELETE queue.");
         logger.error(error);
         throw error;

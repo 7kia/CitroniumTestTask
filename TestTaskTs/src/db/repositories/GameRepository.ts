@@ -10,59 +10,62 @@ import {logger} from "../../Logger";
 import * as pgPromise from "pg-promise";
 import QueryResultError = pgPromise.errors.QueryResultError;
 
-class GameRepository implements IGameRepository {
-  private db: IDatabase<any>;
-  private pgp: IMain;
+class GameRepository extends Repository implements IGameRepository  {
   public constructor(db: any, pgp: IMain) {
-    this.db = db;
-    this.pgp = pgp;
+      super(db, pgp);
   }
 
-  public async find(searchParameters: {[id: string]: string}): Game {
-    let properties: object = {};
-    await this.db.one(Repository.getSelectQueueString("Game", searchParameters))
+  public async find(searchParameters: {[id: string]: any}): Game[] {
+    let properties: Array<{[id: string]: any}> = [];
+    await this.db.many(Repository.getSelectQueueString("Game", searchParameters))
       .then((data) => {
-        const foundData =  {
-          id: data.id,
-          creator_game_id: data.creator_game_id,
-          participant_id: data.participant_id,
-          field_size: data.field_size,
-          field: data.field,
-          access_token: data.access_token,
-          time: data.time,
-          leading_player_id: data.leading_player_id,
-          win_player_id: data.win_player_id,
-      };
-        properties = Helpers.copyByValue(foundData);
+        for (const object of data) {
+          const foundData =  {
+            id: object.id,
+            creator_game_id: object.creator_game_id,
+            participant_id: object.participant_id,
+            field_size: object.field_size,
+            field: object.field,
+            access_token: object.access_token,
+            time: object.time,
+            leading_player_id: object.leading_player_id,
+            win_player_id: object.win_player_id,
+          };
+          properties.push(Helpers.copyByValue(foundData));
+        }
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         logger.error("Error to SELECT queue.");
         logger.error(error);
         throw new QueryResultError(error);
       });
-    const foundUser: Game = new Game(properties);
+    let gameList: Game[] = [];
     logger.info(
-      "Found game with id=" + properties.id
-      + ". Search parameters:" + Repository.generateCriteriaString(searchParameters),
+      "Was search-request for game." +
+      " Search parameters:" + Repository.generateCriteriaString(searchParameters),
     );
-    return foundUser;
+    for (const object of properties) {
+      logger.info("Found game with id=" + properties.id);
+      gameList.push(new Game(object));
+    }
+    return gameList;
   }
 
-  public async create(parameters: {[id: string]: string}) {
+  public async create(parameters: {[id: string]: any}) {
     await this.db.none(Repository.getInsertQueueString("Game", parameters))
       .then((data) => {
         logger.info(
           "Create game. Creation parameters:" + Repository.generateCriteriaString(parameters),
         );
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         logger.error("Error to INSERT queue.");
         logger.error(error);
         throw error;
       });
   }
 
-  public async deleteGame(searchParameters: {[id: string]: string}) {
+  public async deleteGame(searchParameters: {[id: string]: any}) {
     let properties: object = {};
     await this.db.result(Repository.getDeleteQueueString("Game", searchParameters))
       .then((data) => {
@@ -79,7 +82,7 @@ class GameRepository implements IGameRepository {
         };
         properties = Helpers.copyByValue(foundData);
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         logger.error("Error to DELETE queue.");
         logger.error(error);
         throw error;
