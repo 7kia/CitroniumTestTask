@@ -48,6 +48,7 @@ class GameRepository extends Repository implements IGameRepository  {
       logger.info("Found game with id=" + properties.id);
       gameList.push(new Game(object));
     }
+
     return gameList;
   }
 

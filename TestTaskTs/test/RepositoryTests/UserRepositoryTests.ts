@@ -19,8 +19,8 @@ describe("UserRepository. " +
     assert.strictEqual(user2.id, 1);
   });
   const userData: {[id: string]: string} = {
-    name: "Player3",
-    email: "e3.e@com",
+    name: "Player6",
+    email: "e6.e@com",
     password: "sdf",
   };
   it("Можно создать и удалить пользователя.", async () => {

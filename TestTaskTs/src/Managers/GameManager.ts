@@ -6,6 +6,12 @@ import {User} from "../db/Entity/User";
 import {db} from "../db";
 import {logger} from "../Logger";
 
+enum PlayerRole {
+  Creator = 1,
+  Participant,
+  Observer,
+}
+
 class GameManeger {
   public static async getGame(
     creatorName: string,
@@ -32,6 +38,38 @@ class GameManeger {
       throw Error(error);
     }
   }
+  public static async getRoleToGame(
+    playerId: number,
+    gameId: number,
+  ): PlayerRole {
+    const player: User = await db.users.find({id: playerId});
+    const games: Game[] = await db.games.find({id: gameId});
+    const game: Game = games[0];
+    if (player.accessToken && (player.accessToken === game.accessToken)) {
+      if (player.id === game.creatorGameId) {
+        return PlayerRole.Creator;
+      } else if (player.id === game.participantId) {
+        return PlayerRole.Participant;
+      }
+    }
+    return PlayerRole.Observer;
+  }
+
+  public static async canStandParticipant(playerId: number, gameId: number) {
+    const player: User = await db.users.find({id: playerId});
+    const role: PlayerRole = await GameManeger.getRoleToGame(playerId, gameId);
+    const games: Game[] = await db.games.find({id: gameId});
+    const game: Game = games[0];
+    if (role === PlayerRole.Observer) {
+      if (!player.accessToken && !game.participantId) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
-export {GameManeger};
+export {
+  GameManeger,
+  PlayerRole,
+};
