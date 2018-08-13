@@ -4,27 +4,63 @@ import {IDatabase, IMain} from "pg-promise";
  */
 
 export class Repository {
+  private static generateStringValue(value: any) {
+    if (Array.isArray(value)) {
+      let result: string = "{";
+      for (const element of value) {
+        if (result.length > 1) {
+          result = result + ", ";
+        }
+        result += "\"" + element + "\"";
+      }
+      result += "}";
+      return result;
+    }
+    return value.toString();
+  }
+  private static generateString(
+    data: {[id: string]: any},
+    delimiter: string,
+    generateValue: (key: string, value: string) => string,
+  ): string {
+    let criteriaString: string = "";
+    for (const key in data) {
+      if (data.hasOwnProperty(key) && (data[key] !== null)) {
+        if (criteriaString.length > 1) {
+          criteriaString = criteriaString + delimiter;
+        }
+        criteriaString = criteriaString + generateValue(key, Repository.generateStringValue(data[key]));
+      }
+    }
+    return criteriaString;
+  }
+
   public static getSelectQueueString(
       searchPlace: string,
       criterias: {[id: string]: any},
   ): string {
-      const stringCriteria: string = Repository.generateCriteriaString(criterias);
+      const criteriaString: string = Repository.generateCriteriaString(criterias);
 
       return "SELECT * FROM public.\"" + searchPlace + "\" " +
-          "WHERE " + stringCriteria;
+          "WHERE " + criteriaString;
   }
   public static generateCriteriaString(criterias: {[id: string]: any}): string {
-    let stringCriteria: string = "";
-    for (const key in criterias) {
-      if (criterias.hasOwnProperty(key)) {
-        if (stringCriteria.length > 1) {
-          stringCriteria = stringCriteria + " and ";
-        }
-        stringCriteria = stringCriteria + key + "=\'"  + criterias[key] + "\'";
-      }
-    }
-
-    return stringCriteria;
+    return Repository.generateString(
+      criterias,
+      " and ",
+      (key: string, value: string): string => {
+        return key + "=\'"  + value + "\'";
+      },
+    );
+  }
+  public static generateNewDataString(criterias: {[id: string]: any}): string {
+    return Repository.generateString(
+      criterias,
+      ", ",
+      (key: string, value: string): string => {
+        return key + "=\'"  + value + "\'";
+      },
+    );
   }
   public static getInsertQueueString(
     insertPlace: string,
@@ -38,38 +74,43 @@ export class Repository {
         + "VALUES (" + valueString + ")";
   }
   public static generateValueString(data: {[id: string]: any}): string {
-    let valueString: string = "";
-    for (const key in data) {
-      if (data.hasOwnProperty(key)) {
-        if (valueString.length > 1) {
-          valueString = valueString + ", ";
-        }
-        valueString = valueString + "\'" + data[key] + "\'";
-      }
-    }
-
-    return valueString;
+    return Repository.generateString(
+      data,
+      ", ",
+      (key: string, value: string): string => {
+        return "\'" + value + "\'";
+      },
+    );
   }
   public static generatePropertyString(data: {[id: string]: any}): string {
-    let propertyString: string = "";
-    for (const key in data) {
-      if (data.hasOwnProperty(key)) {
-        if (propertyString.length > 1) {
-          propertyString = propertyString + ", ";
-        }
-        propertyString = propertyString + key;
-      }
-    }
-
-    return propertyString;
+    return Repository.generateString(
+      data,
+      ", ",
+      (key: string, value: string): string => {
+        return key;
+      },
+    );
   }
   public static getDeleteQueueString(
     insertPlace: string,
     criterias: {[id: string]: any},
   ): string {
-    const stringCriteria: string = Repository.generateCriteriaString(criterias);
+    const criteriaString: string = Repository.generateCriteriaString(criterias);
     return "DELETE FROM public.\"" + insertPlace + "\" "
-      + "WHERE " + stringCriteria + "";
+      + "WHERE " + criteriaString + "";
+  }
+
+  public static getUpdateQueueString(
+    insertPlace: string,
+    criterias: {[id: string]: any},
+    newData: {[id: string]: any},
+  ): string {
+    const criteriaString: string = Repository.generateCriteriaString(criterias);
+    const newDataString: string = Repository.generateNewDataString(newData);
+
+    return "UPDATE public.\"" + insertPlace + "\""
+      + " SET " + newDataString
+      + " WHERE " + criteriaString;
   }
 
   protected db: IDatabase<any>;

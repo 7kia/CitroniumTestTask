@@ -4,67 +4,115 @@
 import { assert } from "chai";
 import "mocha";
 import {Repository} from "../../src/db/repositories/Repository";
+import {User} from "../../src/db/Entity/User";
 
 
 describe("Класс Repository. " +
     "Основа для всех репозиториев. Содержит в себе соединение с PostgreSQL и " +
     "общие для всех репозиториев операции.", () => {
-    it("Может генерировать строку с критериями поиска.", () => {
+    describe("Может генерировать строки с данными для запроса.", () => {
+      const data: {[id: string]: string} = {id: "1"};
+      const data2: {[id: string]: string} = {id: "2", name: "Player1", email: "e@e.com"};
+      it("Может генерировать строку критерий поиска.", () => {
         assert.strictEqual(
-            Repository.generateCriteriaString({id: "1"}),
-            "id=\'1\'",
+          Repository.generateCriteriaString(data),
+          "id=\'1\'",
         );
         assert.strictEqual(
-            Repository.generateCriteriaString({id: "2", name: "Player1"}),
-            "id=\'2\' and name=\'Player1\'",
+          Repository.generateCriteriaString(data2),
+          "id=\'2\' and name=\'Player1\' and email=\'e@e.com\'",
+        );
+      });
+      it("Может генерировать строку с данными для обновления.", () => {
+        assert.strictEqual(
+          Repository.generateNewDataString(data),
+          "id=\'1\'",
         );
         assert.strictEqual(
-            Repository.generateCriteriaString({id: "2", name: "Player1", email: "e@e.com"}),
-            "id=\'2\' and name=\'Player1\' and email=\'e@e.com\'",
+          Repository.generateNewDataString(data2),
+          "id=\'2\', name=\'Player1\', email=\'e@e.com\'",
         );
+      });
+      it("Может генерировать строку со свойствами.", () => {
+        assert.strictEqual(
+          Repository.generatePropertyString(data),
+          "id",
+        );
+        assert.strictEqual(
+          Repository.generatePropertyString(data2),
+          "id, name, email",
+        );
+      });
+      it("Может генерировать строку со значениями для запроса добавления.", () => {
+        assert.strictEqual(
+          Repository.generateValueString(data),
+          "\'1\'",
+        );
+        assert.strictEqual(
+          Repository.generateValueString(data2),
+          "\'2\', \'Player1\', \'e@e.com\'",
+        );
+      });
     });
-    it("Может генерировать строку c SELECT запросом.", () => {
-        assert.strictEqual(
-            Repository.getSelectQueueString("User", {id: "1"}),
-            "SELECT * " +
-            "FROM public.\"User\" " +
-            "WHERE id=\'1\'",
-        );
-        assert.strictEqual(
-            Repository.getSelectQueueString("Player", {id: "2", name: "Player1"}),
-            "SELECT * " +
-            "FROM public.\"Player\" " +
-            "WHERE id=\'2\' and name=\'Player1\'",
-        );
-        assert.strictEqual(
-            Repository.getSelectQueueString("Player", {id: "2", name: "Player1", email: "e@e.com"}),
-            "SELECT * " +
-            "FROM public.\"Player\" " +
-            "WHERE id=\'2\' and name=\'Player1\' and email=\'e@e.com\'",
-        );
-    });
-    it("Может генерировать строку с INSERT запросом.", () => {
-        assert.strictEqual(
-          Repository.getInsertQueueString("User", {id: "1"}),
-          "INSERT INTO public.\"User\"(id)"
-          + "VALUES ('1')",
-        );
-        assert.strictEqual(
-          Repository.getInsertQueueString("Player", {name: "Player1", email: "e4@e.com"}),
-          "INSERT INTO public.\"Player\"(name, email)"
-          + "VALUES ('Player1', 'e4@e.com')",
-        );
-    });
-    it("Может генерировать строку с DELETE запросом.", () => {
-        assert.strictEqual(
-          Repository.getDeleteQueueString("User", {id: "1"}),
-          "DELETE FROM public.\"User\" "
-          + "WHERE id=\'1\'",
-        );
-        assert.strictEqual(
-          Repository.getDeleteQueueString("Player", {name: "Player1", email: "e4@e.com"}),
-          "DELETE FROM public.\"Player\" "
-          + "WHERE name=\'Player1\' and email=\'e4@e.com\'",
-        );
+
+    describe("Может генерировать строку запроса.", () => {
+        it("Может генерировать строку c SELECT запросом.", () => {
+            assert.strictEqual(
+              Repository.getSelectQueueString("User", {id: "1"}),
+              "SELECT * " +
+              "FROM public.\"User\" " +
+              "WHERE id=\'1\'",
+            );
+            assert.strictEqual(
+              Repository.getSelectQueueString("Player", {id: "2", name: "Player1"}),
+              "SELECT * " +
+              "FROM public.\"Player\" " +
+              "WHERE id=\'2\' and name=\'Player1\'",
+            );
+            assert.strictEqual(
+              Repository.getSelectQueueString("Player", {id: "2", name: "Player1", email: "e@e.com"}),
+              "SELECT * " +
+              "FROM public.\"Player\" " +
+              "WHERE id=\'2\' and name=\'Player1\' and email=\'e@e.com\'",
+            );
+        });
+        it("Может генерировать строку с INSERT запросом.", () => {
+            assert.strictEqual(
+              Repository.getInsertQueueString("User", {id: "1"}),
+              "INSERT INTO public.\"User\"(id)"
+              + "VALUES ('1')",
+            );
+            assert.strictEqual(
+              Repository.getInsertQueueString("Player", {name: "Player1", email: "e4@e.com"}),
+              "INSERT INTO public.\"Player\"(name, email)"
+              + "VALUES ('Player1', 'e4@e.com')",
+            );
+        });
+        it("Может генерировать строку с DELETE запросом.", () => {
+            assert.strictEqual(
+              Repository.getDeleteQueueString("User", {id: "1"}),
+              "DELETE FROM public.\"User\" "
+              + "WHERE id=\'1\'",
+            );
+            assert.strictEqual(
+              Repository.getDeleteQueueString("Player", {name: "Player1", email: "e4@e.com"}),
+              "DELETE FROM public.\"Player\" "
+              + "WHERE name=\'Player1\' and email=\'e4@e.com\'",
+            );
+        });
+        it("Может генерировать строку с UPDATE запросом.", () => {
+            assert.strictEqual(
+              Repository.getUpdateQueueString("User", {id: "1"}, {name: "newName"}),
+              "UPDATE public.\"User\" "
+              + "SET name=\'newName\' "
+              + "WHERE id=\'1\'",
+            );
+            assert.strictEqual(
+              Repository.getUpdateQueueString("User", {id: "1"}, {name: "newName", email: "new@new.com"}),
+              "UPDATE public.\"User\" "
+              + "SET name=\'newName\', email=\'new@new.com\' "
+              + "WHERE id=\'1\'",
+            );
+        });
     });
 });

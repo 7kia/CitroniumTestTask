@@ -3,7 +3,7 @@
  */
 import { assert } from "chai";
 import "mocha";
-import {db} from "../../src/db";
+import {postgreSqlManager} from "../../src/db";
 import {Game} from "../../src/db/Entity/Game";
 import {logger} from "../../src/Logger";
 import {GameManeger, PlayerRole} from "../../src/Managers/GameManager";

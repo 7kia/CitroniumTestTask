@@ -3,14 +3,14 @@
  */
 import {IDatabase, IMain} from "pg-promise";
 
-import {IGameRepository, Game} from "./IGameRepository";
 import {Repository} from "./Repository";
 import {Helpers} from "../../Helpers";
 import {logger} from "../../Logger";
 import * as pgPromise from "pg-promise";
 import QueryResultError = pgPromise.errors.QueryResultError;
+import {Game} from "../Entity/Game";
 
-class GameRepository extends Repository implements IGameRepository  {
+class GameRepository extends Repository {
   public constructor(db: any, pgp: IMain) {
       super(db, pgp);
   }
@@ -42,7 +42,7 @@ class GameRepository extends Repository implements IGameRepository  {
     let gameList: Game[] = [];
     logger.info(
       "Was search-request for game." +
-      " Search parameters:" + Repository.generateCriteriaString(searchParameters),
+      " Search parameters:" + Repository.generateNewDataString(searchParameters),
     );
     for (const object of properties) {
       logger.info("Found game with id=" + properties.id);
@@ -56,7 +56,7 @@ class GameRepository extends Repository implements IGameRepository  {
     await this.db.none(Repository.getInsertQueueString("Game", parameters))
       .then((data) => {
         logger.info(
-          "Create game. Creation parameters:" + Repository.generateCriteriaString(parameters),
+          "Create game. Creation parameters:" + Repository.generateNewDataString(parameters),
         );
       })
       .catch((error: Error) => {
@@ -90,8 +90,31 @@ class GameRepository extends Repository implements IGameRepository  {
       });
     logger.info(
       "Delete game with id=" + properties.id
-      + ". Search parameters:" + Repository.generateCriteriaString(searchParameters),
+      + ". Search parameters:" + Repository.generateNewDataString(searchParameters),
     );
+  }
+  public async update(game: Game) {
+    const newData: {[id: string]: any} = {
+      creator_game_id: game.creatorGameId,
+      participant_id: game.participantId,
+      field_size: game.fieldSize,
+      field: game.field,
+      access_token: game.accessToken,
+      time: game.time,
+      leading_player_id: game.leadingPlayerId,
+      win_player_id: game.winPlayerId,
+    };
+    await this.db.none(Repository.getUpdateQueueString("Game", {id: game.id}, newData))
+      .then((data) => {
+        logger.info(
+          "Update game. New parameters:" + Repository.generateNewDataString(newData),
+        );
+      })
+      .catch((error: Error) => {
+        logger.error("Error to UPDATE queue.");
+        logger.error(error);
+        throw error;
+      });
   }
 }
 

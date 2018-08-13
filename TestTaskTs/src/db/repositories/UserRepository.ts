@@ -3,14 +3,14 @@
  */
 import {IDatabase, IMain} from "pg-promise";
 
-import {IUserRepository, User} from "./IUserRepository";
 import {Repository} from "./Repository";
 import {Helpers} from "../../Helpers";
 import {logger} from "../../Logger";
 import * as pgPromise from "pg-promise";
 import QueryResultError = pgPromise.errors.QueryResultError;
+import {User} from "../Entity/User";
 
-class UserRepository extends Repository implements IUserRepository {
+class UserRepository extends Repository {
   public constructor(db: any, pgp: IMain) {
     super(db, pgp);
   }
@@ -19,7 +19,7 @@ class UserRepository extends Repository implements IUserRepository {
     let properties: object = {};
     await this.db.one(Repository.getSelectQueueString("User", searchParameters))
       .then((data) => {
-        const foundData =  {
+        const foundData: {[id: string]: any} =  {
           id: data.id,
           name: data.name,
           email: data.email,
@@ -36,7 +36,7 @@ class UserRepository extends Repository implements IUserRepository {
     const foundUser: User = new User(properties);
     logger.info(
       "Found user with id=" + properties.id
-      + ". Search parameters:" + Repository.generateCriteriaString(searchParameters),
+      + ". Search parameters:" + Repository.generateNewDataString(searchParameters),
     );
     return foundUser;
   }
@@ -45,7 +45,7 @@ class UserRepository extends Repository implements IUserRepository {
     await this.db.none(Repository.getInsertQueueString("User", parameters))
       .then((data) => {
         logger.info(
-          "Create user. Creation parameters:" + Repository.generateCriteriaString(parameters),
+          "Create user. Creation parameters:" + Repository.generateNewDataString(parameters),
         );
       })
       .catch((error: Error) => {
@@ -77,6 +77,26 @@ class UserRepository extends Repository implements IUserRepository {
       "Delete user with id=" + properties.id
       + ". Search parameters:" + Repository.generateCriteriaString(searchParameters),
     );
+  }
+
+  public async update(user: User) {
+    const newData: {[id: string]: any} = {
+      name: user.name,
+      email: user.email,
+      password: user.password,
+      access_token: user.accessToken,
+    };
+    await this.db.none(Repository.getUpdateQueueString("User", {id: user.id}, newData))
+      .then((data) => {
+        logger.info(
+          "Update user. New parameters:" + Repository.generateNewDataString(newData),
+        );
+      })
+      .catch((error: Error) => {
+        logger.error("Error to UPDATE queue.");
+        logger.error(error);
+        throw error;
+      });
   }
 }
 

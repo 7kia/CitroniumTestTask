@@ -3,7 +3,7 @@
  */
 import {Game} from "../db/Entity/Game";
 import {User} from "../db/Entity/User";
-import {db} from "../db";
+import {postgreSqlManager} from "../db";
 import {logger} from "../Logger";
 
 enum PlayerRole {
@@ -22,17 +22,17 @@ class GameManeger {
       let searchData: {[id: string]: any} = {};
 
       if (creatorName) {
-        const user: User = await db.users.find({name: creatorName});
+        const user: User = await postgreSqlManager.users.find({name: creatorName});
         searchData.creator_game_id = user.id;
       }
       if (participantName) {
-        const user: User = await db.users.find({name: participantName});
+        const user: User = await postgreSqlManager.users.find({name: participantName});
         searchData.participant_id = user.id;
       }
       if (fieldSize) {
         searchData.field_size = fieldSize;
       }
-      return await db.games.find(searchData);
+      return await postgreSqlManager.games.find(searchData);
     } catch (error: Error) {
       logger.error(error);
       throw Error(error);
@@ -42,8 +42,8 @@ class GameManeger {
     playerId: number,
     gameId: number,
   ): PlayerRole {
-    const player: User = await db.users.find({id: playerId});
-    const games: Game[] = await db.games.find({id: gameId});
+    const player: User = await postgreSqlManager.users.find({id: playerId});
+    const games: Game[] = await postgreSqlManager.games.find({id: gameId});
     const game: Game = games[0];
     if (player.accessToken && (player.accessToken === game.accessToken)) {
       if (player.id === game.creatorGameId) {
@@ -56,9 +56,9 @@ class GameManeger {
   }
 
   public static async canStandParticipant(playerId: number, gameId: number) {
-    const player: User = await db.users.find({id: playerId});
+    const player: User = await postgreSqlManager.users.find({id: playerId});
     const role: PlayerRole = await GameManeger.getRoleToGame(playerId, gameId);
-    const games: Game[] = await db.games.find({id: gameId});
+    const games: Game[] = await postgreSqlManager.games.find({id: gameId});
     const game: Game = games[0];
     if (role === PlayerRole.Observer) {
       if (!player.accessToken && !game.participantId) {
