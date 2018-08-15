@@ -29,7 +29,7 @@ describe("UserRepository. " +
   });
   it("Можно создать и удалить пользователя.", async () => {
     const userData: {[id: string]: any} = {
-      name: "Player6",
+      name: "PlayerNew",
       email: "e6.e@com",
       password: "sdf",
     };

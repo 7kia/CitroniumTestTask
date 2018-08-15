@@ -12,7 +12,7 @@ describe("Класс Repository. " +
     "общие для всех репозиториев операции.", () => {
     describe("Может генерировать строки с данными для запроса.", () => {
       const data: {[id: string]: string} = {id: "1"};
-      const data2: {[id: string]: string} = {id: "2", name: "Player1", email: "e@e.com"};
+      const data2: {[id: string]: string} = {id: "2", name: "Player1", email: "e@e.com", password: null};
       it("Может генерировать строку критерий поиска.", () => {
         assert.strictEqual(
           Repository.generateCriteriaString(data),
@@ -20,7 +20,7 @@ describe("Класс Repository. " +
         );
         assert.strictEqual(
           Repository.generateCriteriaString(data2),
-          "id=\'2\' and name=\'Player1\' and email=\'e@e.com\'",
+          "id=\'2\' and name=\'Player1\' and email=\'e@e.com\' and password=null",
         );
       });
       it("Может генерировать строку с данными для обновления.", () => {
@@ -30,7 +30,7 @@ describe("Класс Repository. " +
         );
         assert.strictEqual(
           Repository.generateNewDataString(data2),
-          "id=\'2\', name=\'Player1\', email=\'e@e.com\'",
+          "id=\'2\', name=\'Player1\', email=\'e@e.com\', password=null",
         );
       });
       it("Может генерировать строку со свойствами.", () => {
@@ -40,7 +40,7 @@ describe("Класс Repository. " +
         );
         assert.strictEqual(
           Repository.generatePropertyString(data2),
-          "id, name, email",
+          "id, name, email, password",
         );
       });
       it("Может генерировать строку со значениями для запроса добавления.", () => {
@@ -50,7 +50,7 @@ describe("Класс Repository. " +
         );
         assert.strictEqual(
           Repository.generateValueString(data2),
-          "\'2\', \'Player1\', \'e@e.com\'",
+          "\'2\', \'Player1\', \'e@e.com\', null",
         );
       });
     });

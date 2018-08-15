@@ -16,6 +16,9 @@ export class Repository {
       result += "}";
       return result;
     }
+    if (value === null) {
+      return null;
+    }
     return value.toString();
   }
   private static generateString(
@@ -25,7 +28,7 @@ export class Repository {
   ): string {
     let criteriaString: string = "";
     for (const key in data) {
-      if (data.hasOwnProperty(key) && (data[key] !== null)) {
+      if (data.hasOwnProperty(key) ) {//&& (data[key] !== null)
         if (criteriaString.length > 1) {
           criteriaString = criteriaString + delimiter;
         }
@@ -49,7 +52,10 @@ export class Repository {
       criterias,
       " and ",
       (key: string, value: string): string => {
-        return key + "=\'"  + value + "\'";
+        if (value) {
+          return key + "=\'"  + value + "\'";
+        }
+        return key + "=null";
       },
     );
   }
@@ -58,7 +64,10 @@ export class Repository {
       criterias,
       ", ",
       (key: string, value: string): string => {
-        return key + "=\'"  + value + "\'";
+        if (value) {
+          return key + "=\'" + value + "\'";
+        }
+        return key + "=null";
       },
     );
   }
@@ -78,7 +87,10 @@ export class Repository {
       data,
       ", ",
       (key: string, value: string): string => {
-        return "\'" + value + "\'";
+        if (value) {
+          return "\'" + value + "\'";
+        }
+        return "null";
       },
     );
   }

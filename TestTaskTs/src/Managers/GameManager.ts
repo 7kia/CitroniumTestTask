@@ -67,6 +67,36 @@ class GameManeger {
     }
     return false;
   }
+
+  public static async connectPlayer(playerId: number, gameId: number) {
+    const willParticipant: boolean = await GameManeger.canStandParticipant(playerId, gameId);
+    const foundGames: Game[] = await postgreSqlManager.games.find({id: gameId});
+    let game: Game = foundGames[0];
+    let user: User = await postgreSqlManager.users.find({id: playerId});
+    if (willParticipant) {
+      if (game.creatorGameId !== null) {
+        game.participantId = playerId;
+      } else {
+        game.creatorGameId = playerId;
+      }
+      user.accessToken = game.accessToken;
+
+      postgreSqlManager.games.update(game);
+      postgreSqlManager.users.update(user);
+    }
+    return willParticipant;
+  }
+  public static async unconnectPlayer(playerId: number) {
+    let user: User = await postgreSqlManager.users.find({id: playerId});
+    user.accessToken = null;
+    await postgreSqlManager.users.update(user);
+  }
+
+  public static async getGameTime(gameId: number) {
+    const foundGames: Game[] = await postgreSqlManager.games.find({id: gameId});
+    const game: Game = foundGames[0];
+    return game.time;
+  }
 }
 
 export {
