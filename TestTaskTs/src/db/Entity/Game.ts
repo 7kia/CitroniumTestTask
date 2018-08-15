@@ -9,6 +9,7 @@ class Game {
   public field: string[];
   public accessToken: string;
   public time: number;
+  public lastMoveTime: number;
   public leadingPlayerId: number;
   public winPlayerId: number;
   constructor(data: any) {
@@ -19,6 +20,7 @@ class Game {
     this.field = data.field;
     this.accessToken = data.access_token;
     this.time = data.time;
+    this.lastMoveTime = data.last_move_time;
     this.leadingPlayerId = data.leading_player_id;
     this.winPlayerId = data.win_player_id;
   }

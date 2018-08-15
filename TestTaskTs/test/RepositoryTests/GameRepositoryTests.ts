@@ -37,11 +37,11 @@ describe("GameDataRepository. " +
       participant_id: 5,
       field_size: 9,
       field: ["???", "???", "???"],
-      access_token: "qwe",
+      access_token: "gameDeleteAndCreate",
       time: 0,
       leading_player_id: 4,
     };
-    deleteGameIfExist(gameData);
+    await deleteGameIfExist(gameData);
 
     await postgreSqlManager.games.create(gameData);
     const foundGames: Game[] = await postgreSqlManager.games.find(gameData);
@@ -68,7 +68,7 @@ describe("GameDataRepository. " +
       participant_id: 7,
       field_size: 9,
       field: ["???", "???", "???"],
-      access_token: "qwe",
+      access_token: "gameUpdate",
       time: 0,
       leading_player_id: 6,
     };
@@ -77,8 +77,8 @@ describe("GameDataRepository. " +
       time: 0.5,
       leading_player_id: 7,
     };
-    deleteGameIfExist(gameData);
-    deleteGameIfExist(newGameData);
+    await deleteGameIfExist(gameData);
+    await deleteGameIfExist(newGameData);
 
     await postgreSqlManager.games.create(gameData);
 

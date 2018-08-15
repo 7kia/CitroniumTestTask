@@ -28,6 +28,7 @@ class GameRepository extends Repository {
             field: object.field,
             access_token: object.access_token,
             time: object.time,
+            last_move_time: object.last_move_time,
             leading_player_id: object.leading_player_id,
             win_player_id: object.win_player_id,
           };
@@ -78,6 +79,7 @@ class GameRepository extends Repository {
           field: data.field,
           access_token: data.access_token,
           time: data.time,
+          last_move_time: data.last_move_time,
           leading_player_id: data.leading_player_id,
           win_player_id: data.win_player_id,
         };
@@ -101,6 +103,7 @@ class GameRepository extends Repository {
       field: game.field,
       access_token: game.accessToken,
       time: game.time,
+      last_move_time: game.lastMoveTime,
       leading_player_id: game.leadingPlayerId,
       win_player_id: game.winPlayerId,
     };
