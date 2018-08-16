@@ -46,7 +46,7 @@ class GameRepository extends Repository {
       " Search parameters:" + Repository.generateNewDataString(searchParameters),
     );
     for (const object of properties) {
-      logger.info("Found game with id=" + properties.id);
+      logger.info("Found game with id=" + object.id);
       gameList.push(new Game(object));
     }
 

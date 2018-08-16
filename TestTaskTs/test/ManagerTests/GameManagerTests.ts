@@ -1,12 +1,12 @@
 /**
  * Created by Илья on 11.08.2018.
  */
-import { assert } from "chai";
+import { assert, expect, should } from "chai";
 import "mocha";
 import {postgreSqlManager} from "../../src/db";
 import {DataForCreation, Game} from "../../src/db/Entity/Game";
 import {logger} from "../../src/Logger";
-import {GameManeger, PlayerRole, Position} from "../../src/Managers/GameManager";
+import {ERROR_GAME_MESSAGES, GameManeger, PlayerRole, Position} from "../../src/Managers/GameManager";
 import {User} from "../../src/db/Entity/User";
 
 describe("GameManeger. " +
@@ -147,43 +147,56 @@ describe("GameManeger. " +
     }
   };
   describe("Может принять ход то игрока", async () => {
-    describe("Если игрок участвует в этой партии.", async () => {
-      const testPlayerMoveToGame = async (
-        creatorPlayerData: DataForCreation,
-        participantPlayerData: DataForCreation,
-        startGameData: DataForCreation,
-        playerActions: (creator: User, participant: User, game: Game) => void,
-      ) => {
-        await deleteUserIfExist(creatorPlayerData);
-        await deleteUserIfExist(participantPlayerData);
-        await postgreSqlManager.users.create(creatorPlayerData);
-        await postgreSqlManager.users.create(participantPlayerData);
-        let creator: User = await postgreSqlManager.users.find(creatorPlayerData);
-        let participant: User = await postgreSqlManager.users.find(participantPlayerData);
+    const testPlayerMoveToGame = async (
+      creatorPlayerData: DataForCreation,
+      participantPlayerData: DataForCreation,
+      startGameData: DataForCreation,
+      playerActions: (creator: User, participant: User, game: Game) => void,
+    ) => {
+      await deleteUserIfExist(creatorPlayerData);
+      await deleteUserIfExist(participantPlayerData);
+      await postgreSqlManager.users.create(creatorPlayerData);
+      await postgreSqlManager.users.create(participantPlayerData);
+      let creator: User = await postgreSqlManager.users.find(creatorPlayerData);
+      let participant: User = await postgreSqlManager.users.find(participantPlayerData);
 
-        let gameData: {[id: string]: any} = {
-          creator_game_id: creator.id,
-          participant_id: participant.id,
-          field_size: startGameData.field_size,
-          field: startGameData.field,
-          access_token: startGameData.access_token,
-          time: startGameData.time,
-          leading_player_id: creator.id,
-        };
-        await deleteGameIfExist(gameData);
-        await postgreSqlManager.games.create(gameData);
-        const foundGames: Game[] = await postgreSqlManager.games.find(gameData);
-        let game: Game = foundGames[0];
-
-        await GameManeger.connectPlayer(creator.id, game.id);
-        await GameManeger.connectPlayer(participant.id, game.id);
-        await playerActions(creator, participant, game);
-
-        await postgreSqlManager.games.deleteGame(gameData);
-        await postgreSqlManager.users.deleteUser(creatorPlayerData);
-        await postgreSqlManager.users.deleteUser(participantPlayerData);
+      let gameData: {[id: string]: any} = {
+        field_size: startGameData.field_size,
+        field: startGameData.field,
+        access_token: startGameData.access_token,
+        time: startGameData.time,
+        leading_player_id: creator.id,
       };
+      await deleteGameIfExist({access_token: gameData.access_token});
+      await postgreSqlManager.games.create(gameData);
+      let foundGames: Game[] = await postgreSqlManager.games.find(gameData);
+      let game: Game = foundGames[0];
 
+      await GameManeger.connectPlayer(creator.id, game.id);
+      await GameManeger.connectPlayer(participant.id, game.id);
+
+      creator = await postgreSqlManager.users.find(creatorPlayerData);
+      participant = await postgreSqlManager.users.find(participantPlayerData);
+      foundGames = await postgreSqlManager.games.find(gameData);
+      game = foundGames[0];
+      await playerActions(creator, participant, game);
+
+      await postgreSqlManager.games.deleteGame(gameData);
+      await postgreSqlManager.users.deleteUser(creatorPlayerData);
+      await postgreSqlManager.users.deleteUser(participantPlayerData);
+    };
+
+    const assertThrowsAsync: () => void = async (testFunc: () => any, regExp) => {
+      let func = () => {};
+      try {
+        await testFunc();
+      } catch (error: Error) {
+        func = () => {throw error};
+      } finally {
+        assert.throws(func, regExp);
+      }
+    };
+    describe("Если игрок участвует в этой партии.", async () => {
       it("Если игрок сходил в не пустую клетку, то будет брошено исключение.", async () => {
         const creatorData: DataForCreation = {
           name: "PlayerCreatorTestMove_EmptyCell",
@@ -206,11 +219,9 @@ describe("GameManeger. " +
           participantData,
           gameData,
           async (creator: User, participant: User, game: Game): void => {
-            assert.throw(
-              async () => {
-                await GameManeger.takePlayerMove(creator.id, new Position(1, 0), game.id);
-              },
-              Error,
+            await assertThrowsAsync(
+              async () => await GameManeger.takePlayerMove(creator.id, new Position(1, 0), game.id),
+              ERROR_GAME_MESSAGES.thisCellFilled,
             );
             const foundGames: Game[] = await postgreSqlManager.games.find(gameData);
             game = foundGames[0];
@@ -225,19 +236,19 @@ describe("GameManeger. " +
           "игрока и право хода передаётся другому игроку, " +
           "если сходивший игрок не выиграл. ", async () => {
           const creatorData: DataForCreation = {
-            name: "PlayerCreatorTestMove_EmptyCellAndNoWinner",
-            email: "PlayerCreatorTestMove_EmptyCellAndNoWinner.e@com",
+            name: "CreatorTestMove_EmptyCellAndNoWinner",
+            email: "CreatorTestMove_EmptyCellAndNoWinner.e@com",
             password: "123",
           };
           const participantData: DataForCreation = {
-            name: "PlayerParticipantTestMove_EmptyCellAndNoWinner",
-            email: "PlayerParticipantTestMove_EmptyCellAndNoWinner.e@com",
+            name: "ParticipantTestMove_EmptyCellAndNoWinner",
+            email: "ParticipantTestMove_EmptyCellAndNoWinner.e@com",
             password: "123",
           };
           const gameData: DataForCreation = {
             field_size: 3,
             field: ["???", "???", "???"],
-            access_token: "PlayerCreatorTestMove_EmptyCellAndNoWinner",
+            access_token: "CreatorTestMove_EmptyCellAndNoWinner",
             time: 10,
           };
           await testPlayerMoveToGame(
@@ -246,14 +257,14 @@ describe("GameManeger. " +
             gameData,
             async (creator: User, participant: User, game: Game): void => {
               await GameManeger.takePlayerMove(creator.id, new Position(2, 1), game.id);
-              let foundGames: Game[] = await postgreSqlManager.games.find(gameData);
+              let foundGames: Game[] = await postgreSqlManager.games.find({access_token: gameData.access_token});
               game = foundGames[0];
               assert.deepEqual(game.field, ["???", "??X", "???"]);
               assert.deepEqual(game.winPlayerId, null);
               assert.deepEqual(game.leadingPlayerId, participant.id);
 
               await GameManeger.takePlayerMove(participant.id, new Position(1, 1), game.id);
-              foundGames = await postgreSqlManager.games.find(gameData);
+              foundGames = await postgreSqlManager.games.find({access_token: gameData.access_token});
               game = foundGames[0];
               assert.deepEqual(game.field, ["???", "?0X", "???"]);
               assert.deepEqual(game.winPlayerId, null);
@@ -264,19 +275,19 @@ describe("GameManeger. " +
         it("Если после хода игрок выиграл, то он отмечается как победитель " +
           "и последующие ходы не принимаются.", async () => {
           const creatorData: DataForCreation = {
-            name: "PlayerCreatorTestMove_EmptyCellAndFoundWinner",
-            email: "PlayerCreatorTestMove_EmptyCellAndFoundWinner.e@com",
+            name: "CreatorTestMove_EmptyCellAndFoundWinner",
+            email: "CreatorTestMove_EmptyCellAndFoundWinner.e@com",
             password: "123",
           };
           const participantData: DataForCreation = {
-            name: "PlayerParticipantTestMove_EmptyCellAndFoundWinner",
-            email: "PlayerParticipantTestMove_EmptyCellAndFoundWinner.e@com",
+            name: "ParticipantTestMove_EmptyCellAndFoundWinner",
+            email: "ParticipantTestMove_EmptyCellAndFoundWinner.e@com",
             password: "123",
           };
           const gameData: DataForCreation = {
             field_size: 3,
             field: ["XX?", "00?", "???"],
-            access_token: "PlayerCreatorTestMove_EmptyCellAndFoundWinner",
+            access_token: "CreatorTestMove_EmptyCellAndFoundWinner",
             time: 10,
           };
           await testPlayerMoveToGame(
@@ -287,36 +298,34 @@ describe("GameManeger. " +
               const newField: string[] = ["XXX", gameData.field[1], gameData.field[2]];
               await GameManeger.takePlayerMove(creator.id, new Position(2, 0), game.id);
 
-              const foundGames: Game[] = await postgreSqlManager.games.find(gameData);
+              const foundGames: Game[] = await postgreSqlManager.games.find({access_token: gameData.access_token});
               game = foundGames[0];
               assert.deepEqual(game.field, newField);
               assert.deepEqual(game.winPlayerId, creator.id);
               assert.deepEqual(game.leadingPlayerId, creator.id);
 
-              assert.throw(
-                async () => {
-                  await GameManeger.takePlayerMove(participant.id, new Position(2, 2), game.id);
-                },
-                Error,
+              await assertThrowsAsync(
+                async () => GameManeger.takePlayerMove(participant.id, new Position(2, 2), game.id),
+                ERROR_GAME_MESSAGES.gameEnd,
               );
             },
           );
         });
         it("Когда игрок ходит фиксируется время последнего хода.", async () => {
           const creatorData: DataForCreation = {
-            name: "PlayerCreatorTestMove_FixLastMoveTime",
-            email: "PlayerCreatorTestMove_FixLastMoveTime.e@com",
+            name: "CreatorTestMove_FixLastMoveTime",
+            email: "CreatorTestMove_FixLastMoveTime.e@com",
             password: "123",
           };
           const participantData: DataForCreation = {
-            name: "PlayerParticipantTestMove_FixLastMoveTime",
-            email: "PlayerParticipantTestMove_FixLastMoveTime.e@com",
+            name: "ParticipantTestMove_FixLastMoveTime",
+            email: "ParticipantTestMove_FixLastMoveTime.e@com",
             password: "123",
           };
           const gameData: DataForCreation = {
             field_size: 3,
             field: ["?0?", "???", "???"],
-            access_token: "PlayerCreatorTestMove_FixLastMoveTime",
+            access_token: "CreatorTestMove_FixLastMoveTime",
             time: 10,
           };
           await testPlayerMoveToGame(
@@ -327,7 +336,7 @@ describe("GameManeger. " +
               assert.deepEqual(game.lastMoveTime, null);
 
               await GameManeger.takePlayerMove(creator.id, new Position(0, 0), game.id);
-              const foundGames: Game[] = await postgreSqlManager.games.find(gameData);
+              const foundGames: Game[] = await postgreSqlManager.games.find({access_token: gameData.access_token});
               game = foundGames[0];
               assert.deepEqual(game.lastMoveTime, gameData.time);
             },
@@ -338,19 +347,19 @@ describe("GameManeger. " +
       it("Если игрок сходил когда должен ходить другой " +
         "игрок, то будет брошено исключение.", async () => {
         const creatorData: DataForCreation = {
-          name: "PlayerCreatorTestMove_MoveNotHaveRightMove",
-          email: "PlayerCreatorTestMove_MoveNotHaveRightMove.e@com",
+          name: "CreatorTestMove_MoveNotHaveRightMove",
+          email: "CreatorTestMove_MoveNotHaveRightMove.e@com",
           password: "123",
         };
         const participantData: DataForCreation = {
-          name: "PlayerParticipantTestMove_MoveNotHaveRightMove",
-          email: "PlayerParticipantTestMove_MoveNotHaveRightMove.e@com",
+          name: "ParticipantTestMove_MoveNotHaveRightMove",
+          email: "ParticipantTestMove_MoveNotHaveRightMove.e@com",
           password: "123",
         };
         const gameData: DataForCreation = {
           field_size: 3,
           field: ["XX?", "00?", "???"],
-          access_token: "PlayerCreatorTestMove_MoveNotHaveRightMove",
+          access_token: "CreatorTestMove_MoveNotHaveRightMove",
           time: 10,
         };
         await testPlayerMoveToGame(
@@ -358,14 +367,12 @@ describe("GameManeger. " +
           participantData,
           gameData,
           async (creator: User, participant: User, game: Game): void => {
-            assert.throw(
-              async () => {
-                await GameManeger.takePlayerMove(participant.id, new Position(2, 0), game.id);
-              },
-              Error,
+            await assertThrowsAsync(
+              async () => await GameManeger.takePlayerMove(participant.id, new Position(2, 0), game.id),
+              ERROR_GAME_MESSAGES.moveAnotherPlayer,
             );
 
-            const foundGames: Game[] = await postgreSqlManager.games.find(gameData);
+            const foundGames: Game[] = await postgreSqlManager.games.find({access_token: gameData.access_token});
             game = foundGames[0];
             assert.deepEqual(game.field, gameData.field);
             assert.deepEqual(game.winPlayerId, null);
@@ -377,19 +384,19 @@ describe("GameManeger. " +
     describe("Если игрок не участвует в этой партии.", async () => {
       it("Ему нельзя ходить, будет брошено исключение.", async () => {
         const creatorData: DataForCreation = {
-          name: "PlayerCreatorTestMove_ObserverMove",
-          email: "PlayerCreatorTestMove_ObserverMove.e@com",
+          name: "CreatorTestMove_ObserverMove",
+          email: "CreatorTestMove_ObserverMove.e@com",
           password: "123",
         };
         const participantData: DataForCreation = {
-          name: "PlayerParticipantTestMove_ObserverMove",
-          email: "PlayerParticipantTestMove_ObserverMove.e@com",
+          name: "ParticipantTestMove_ObserverMove",
+          email: "ParticipantTestMove_ObserverMove.e@com",
           password: "123",
         };
         const gameData: DataForCreation = {
           field_size: 3,
           field: ["XX?", "00?", "???"],
-          access_token: "PlayerCreatorTestMove_ObserverMove",
+          access_token: "CreatorTestMove_ObserverMove",
           time: 10,
         };
         await testPlayerMoveToGame(
@@ -405,14 +412,12 @@ describe("GameManeger. " +
             deleteUserIfExist(observerData);
             await postgreSqlManager.users.create(observerData);
             const observer: User = await postgreSqlManager.users.find(observerData);
-            assert.throw(
-              async () => {
-                await GameManeger.takePlayerMove(observer.id, new Position(2, 0), game.id);
-              },
-              Error,
+            await assertThrowsAsync(
+              async () => await GameManeger.takePlayerMove(observer.id, new Position(2, 0), game.id),
+              ERROR_GAME_MESSAGES.tokenNotCorrespond,
             );
 
-            const foundGames: Game[] = await postgreSqlManager.games.find(gameData);
+            const foundGames: Game[] = await postgreSqlManager.games.find({access_token: gameData.access_token});
             game = foundGames[0];
             assert.deepEqual(game.field, gameData.field);
             assert.deepEqual(game.winPlayerId, null);
@@ -423,175 +428,175 @@ describe("GameManeger. " +
         );
       });
     });
+  });
+  describe("Может определить победителя в игре.", () => {
+    const gameData: {[id: string]: any} = {
+      creator_game_id: 6,
+      participant_id: 7,
+      access_token: "gameWinner",
+      time: 0,
+      leading_player_id: 6,
+    };
+    const testFindWinnerFunction: () => void = (testData: Array<{[id: string]: any}>) => {
+      let game: Game = new Game(gameData);
 
-    describe("Может определить победителя в игре.", () => {
-      const gameData: {[id: string]: any} = {
-        creator_game_id: 6,
-        participant_id: 7,
-        access_token: "gameWinner",
-        time: 0,
-        leading_player_id: 6,
-      };
-      const testFindWinnerFunction: () => void = (testData: Array<{[id: string]: any}>) => {
-        let game: Game = new Game(gameData);
-
-        for (const data: {[id: string]: any} of testData) {
-          game.leadingPlayerId = data.leadingPlayerId;
-          game.field = data.field;
-          game.fieldSize = data.fieldSize;
-          const winnerId: number = GameManeger.findWinner(game, data.position);
-          assert.strictEqual(winnerId, data.winnerId);
-        }
-      };
-      describe("Если заполнена знаками одного типа:", () => {
-        it("Горизонталь.", () => {
-          const testData: Array<{[id: string]: any}> = [
-            {
-              leadingPlayerId: gameData.participant_id,
-              field: ["???", "???", "000"],
-              position: new Position(1, 2),
-              winnerId: gameData.participant_id,
-              fieldSize: 3,
-            },
-            {
-              leadingPlayerId: gameData.creator_game_id,
-              field: ["XXX", "???", "???"],
-              position: new Position(2, 0),
-              winnerId: gameData.creator_game_id,
-              fieldSize: 3,
-            },
-            {
-              leadingPlayerId: gameData.creator_game_id,
-              field: ["???", "XXX", "???"],
-              position: new Position(2, 1),
-              winnerId: gameData.creator_game_id,
-              fieldSize: 3,
-            },
-            {
-              leadingPlayerId: gameData.creator_game_id,
-              field: ["????", "????", "XXXX", "????"],
-              position: new Position(2, 2),
-              winnerId: gameData.creator_game_id,
-              fieldSize: 4,
-            },
-          ];
-          testFindWinnerFunction(testData);
-        });
-        it("Вертикаль.", () => {
-          const testData: Array<{[id: string]: any}> = [
-            {
-              leadingPlayerId: gameData.creator_game_id,
-              field: ["X??", "X??", "X??"],
-              position: new Position(0, 1),
-              winnerId: gameData.creator_game_id,
-              fieldSize: 3,
-            },
-            {
-              leadingPlayerId: gameData.creator_game_id,
-              field: ["?X??", "?X??", "?X??", "?X??"],
-              position: new Position(1, 3),
-              winnerId: gameData.creator_game_id,
-              fieldSize: 4,
-            },
-            {
-              leadingPlayerId: gameData.participant_id,
-              field: ["???0", "???0", "???0", "???0"],
-              position: new Position(3, 2),
-              winnerId: gameData.participant_id,
-              fieldSize: 4,
-            },
-          ];
-          testFindWinnerFunction(testData);
-        });
-        it("Диагональ.", () => {
-          const testData: Array<{[id: string]: any}> = [
-            {
-              leadingPlayerId: gameData.creator_game_id,
-              field: ["X??", "?X?", "??X"],
-              position: new Position(1, 1),
-              winnerId: gameData.creator_game_id,
-              fieldSize: 3,
-            },
-            {
-              leadingPlayerId: gameData.participant_id,
-              field: [
-                "0???",
-                "?0??",
-                "??0?",
-                "???0",
-              ],
-              position: new Position(1, 1),
-              winnerId: gameData.participant_id,
-              fieldSize: 4,
-            },
-            {
-              leadingPlayerId: gameData.participant_id,
-              field: [
-                "???0",
-                "??0?",
-                "?0??",
-                "0???",
-              ],
-              position: new Position(1, 2),
-              winnerId: gameData.participant_id,
-              fieldSize: 4,
-            },
-            {
-              leadingPlayerId: gameData.creator_game_id,
-              field: [
-                "???X",
-                "??X?",
-                "?X??",
-                "X???",
-              ],
-              position: new Position(1, 2),
-              winnerId: gameData.creator_game_id,
-              fieldSize: 4,
-            },
-          ];
-          testFindWinnerFunction(testData);
-        });
-      });
-      it("Если победителя нет то функция возвращает null", () => {
+      for (const data: {[id: string]: any} of testData) {
+        game.leadingPlayerId = data.leadingPlayerId;
+        game.field = data.field;
+        game.fieldSize = data.fieldSize;
+        const winnerId: number = GameManeger.findWinner(game, data.position);
+        assert.strictEqual(winnerId, data.winnerId);
+      }
+    };
+    describe("Если заполнена знаками одного типа:", () => {
+      it("Горизонталь.", () => {
         const testData: Array<{[id: string]: any}> = [
           {
             leadingPlayerId: gameData.participant_id,
-            field: [
-              "???",
-              "?0?",
-              "?XX",
-            ],
+            field: ["???", "???", "000"],
+            position: new Position(1, 2),
+            winnerId: gameData.participant_id,
+            fieldSize: 3,
+          },
+          {
+            leadingPlayerId: gameData.creator_game_id,
+            field: ["XXX", "???", "???"],
+            position: new Position(2, 0),
+            winnerId: gameData.creator_game_id,
+            fieldSize: 3,
+          },
+          {
+            leadingPlayerId: gameData.creator_game_id,
+            field: ["???", "XXX", "???"],
+            position: new Position(2, 1),
+            winnerId: gameData.creator_game_id,
+            fieldSize: 3,
+          },
+          {
+            leadingPlayerId: gameData.creator_game_id,
+            field: ["????", "????", "XXXX", "????"],
+            position: new Position(2, 2),
+            winnerId: gameData.creator_game_id,
+            fieldSize: 4,
+          },
+        ];
+        testFindWinnerFunction(testData);
+      });
+      it("Вертикаль.", () => {
+        const testData: Array<{[id: string]: any}> = [
+          {
+            leadingPlayerId: gameData.creator_game_id,
+            field: ["X??", "X??", "X??"],
+            position: new Position(0, 1),
+            winnerId: gameData.creator_game_id,
+            fieldSize: 3,
+          },
+          {
+            leadingPlayerId: gameData.creator_game_id,
+            field: ["?X??", "?X??", "?X??", "?X??"],
+            position: new Position(1, 3),
+            winnerId: gameData.creator_game_id,
+            fieldSize: 4,
+          },
+          {
+            leadingPlayerId: gameData.participant_id,
+            field: ["???0", "???0", "???0", "???0"],
+            position: new Position(3, 2),
+            winnerId: gameData.participant_id,
+            fieldSize: 4,
+          },
+        ];
+        testFindWinnerFunction(testData);
+      });
+      it("Диагональ.", () => {
+        const testData: Array<{[id: string]: any}> = [
+          {
+            leadingPlayerId: gameData.creator_game_id,
+            field: ["X??", "?X?", "??X"],
             position: new Position(1, 1),
-            winnerId: GameManeger.NO_WINNER,
+            winnerId: gameData.creator_game_id,
             fieldSize: 3,
           },
           {
             leadingPlayerId: gameData.participant_id,
             field: [
+              "0???",
               "?0??",
               "??0?",
               "???0",
-              "????",
             ],
-            position: new Position(2, 1),
-            winnerId: GameManeger.NO_WINNER,
+            position: new Position(1, 1),
+            winnerId: gameData.participant_id,
+            fieldSize: 4,
+          },
+          {
+            leadingPlayerId: gameData.participant_id,
+            field: [
+              "???0",
+              "??0?",
+              "?0??",
+              "0???",
+            ],
+            position: new Position(1, 2),
+            winnerId: gameData.participant_id,
             fieldSize: 4,
           },
           {
             leadingPlayerId: gameData.creator_game_id,
             field: [
-              "????",
               "???X",
               "??X?",
               "?X??",
+              "X???",
             ],
-            position: new Position(2, 2),
-            winnerId: GameManeger.NO_WINNER,
+            position: new Position(1, 2),
+            winnerId: gameData.creator_game_id,
             fieldSize: 4,
           },
         ];
         testFindWinnerFunction(testData);
       });
     });
+    it("Если победителя нет то функция возвращает null", () => {
+      const testData: Array<{[id: string]: any}> = [
+        {
+          leadingPlayerId: gameData.participant_id,
+          field: [
+            "???",
+            "?0?",
+            "?XX",
+          ],
+          position: new Position(1, 1),
+          winnerId: GameManeger.NO_WINNER,
+          fieldSize: 3,
+        },
+        {
+          leadingPlayerId: gameData.participant_id,
+          field: [
+            "?0??",
+            "??0?",
+            "???0",
+            "????",
+          ],
+          position: new Position(2, 1),
+          winnerId: GameManeger.NO_WINNER,
+          fieldSize: 4,
+        },
+        {
+          leadingPlayerId: gameData.creator_game_id,
+          field: [
+            "????",
+            "???X",
+            "??X?",
+            "?X??",
+          ],
+          position: new Position(2, 2),
+          winnerId: GameManeger.NO_WINNER,
+          fieldSize: 4,
+        },
+      ];
+      testFindWinnerFunction(testData);
+    });
   });
+
 });

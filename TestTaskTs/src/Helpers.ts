@@ -11,6 +11,14 @@ class Helpers {
     }
     return objCopy;
   }
+
+  public static replaceAt(
+    changeString: string,
+    index: number,
+    replacement: string,
+  ): string {
+    return changeString.substr(0, index) + replacement + changeString.substr(index + replacement.length);
+  }
 }
 
 export {

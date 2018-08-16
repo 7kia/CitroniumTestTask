@@ -5,6 +5,7 @@ import {Game} from "../db/Entity/Game";
 import {User} from "../db/Entity/User";
 import {postgreSqlManager} from "../db";
 import {logger} from "../Logger";
+import {Helpers} from "../Helpers";
 
 enum PlayerRole {
   Creator = 1,
@@ -27,8 +28,16 @@ class Position {
   }
 }
 
-const errorMessages: {[id: string]: string} = {
+const GAME_MESSAGES: {[id: string]: string} = {
+  yourMove: "Your move",
+};
+
+const ERROR_GAME_MESSAGES: {[id: string]: string} = {
   unknownSymbol: "Unknown symbol",
+  tokenNotCorrespond: "Access token not correspond.",
+  moveAnotherPlayer: "Now move another player.",
+  gameEnd: "Game end.",
+  thisCellFilled: "Player move to filled cell.",
 };
 
 class GameManeger {
@@ -57,7 +66,7 @@ class GameManeger {
       return await postgreSqlManager.games.find(searchData);
     } catch (error: Error) {
       logger.error(error);
-      throw Error(error);
+      throw new Error(error);
     }
   }
   public static async getRoleToGame(
@@ -103,8 +112,8 @@ class GameManeger {
       }
       user.accessToken = game.accessToken;
 
-      postgreSqlManager.games.update(game);
-      postgreSqlManager.users.update(user);
+      await postgreSqlManager.games.update(game);
+      await postgreSqlManager.users.update(user);
     }
     return willParticipant;
   }
@@ -125,8 +134,8 @@ class GameManeger {
     } else if (game.leadingPlayerId === game.participantId) {
       return Cell.Zero;
     }
-    logger.error(errorMessages.unknownSymbol);
-    throw Error(errorMessages.unknownSymbol);
+    logger.error(ERROR_GAME_MESSAGES.unknownSymbol);
+    throw new Error(ERROR_GAME_MESSAGES.unknownSymbol);
   }
   public static async takePlayerMove(
     playerId: number,
@@ -145,29 +154,64 @@ class GameManeger {
       const selectCell: string = game.field[position.y][position.x];
       if (selectCell === Cell.Empty) {
         const playerSign: string = GameManeger.getLeadingPlayerSign(game);
-        game.field[position.y][position.x] = playerSign;
+        game.field[position.y] = Helpers.replaceAt(game.field[position.y], position.x, playerSign);
         game.lastMoveTime = game.time;
-        const winnerId: number = GameManeger.findWinner(game, position);
 
-        postgreSqlManager.games.update(game);
+        const winnerId: number = GameManeger.findWinner(game, position);
+        if (winnerId !== GameManeger.NO_WINNER) {
+          game.winPlayerId = winnerId;
+        } else {
+          GameManeger.swapMoveLaw(game);
+          await GameManeger.sendMessage(game.leadingPlayerId, GAME_MESSAGES.yourMove);
+        }
+        await postgreSqlManager.games.update(game);
+      } else {
+        logger.error(
+          ERROR_GAME_MESSAGES.thisCellFilled
+          + "Game with id=" + game.id
+          + ",player with id=" + player.id,
+        );
+        throw new Error(ERROR_GAME_MESSAGES.thisCellFilled);
       }
       return true;
     }
 
     let errorMessage: string = "";
     if (!correspondToken) {
-      errorMessage += "Access token not correspond.";
+      errorMessage += ERROR_GAME_MESSAGES.tokenNotCorrespond;
+    } else {
+      if (!thisPlayerMove) {
+        errorMessage += ERROR_GAME_MESSAGES.moveAnotherPlayer;
+      }
+      if (existWinner) {
+        errorMessage += ERROR_GAME_MESSAGES.gameEnd;
+      }
     }
-    if (!thisPlayerMove) {
-      errorMessage += "Now move another player.";
-    }
-    if (existWinner) {
-      errorMessage += "Game end.";
-    }
+
     logger.error(errorMessage);
-    throw Error(errorMessage);
+    throw new Error(errorMessage);
   }
 
+  public static findWinner(
+    game: Game,
+    position: Position,
+  ): number {
+    const playerSign: string = GameManeger.getLeadingPlayerSign(game);
+    const firstDiagonalFunc: () => number = (x: number, pos: Position) => {
+      return (x - pos.x) + pos.y;
+    };
+    const secondDiagonalFunc: () => number = (x: number, pos: Position) => {
+      return pos.y - (x - pos.x);
+    };
+    if (GameManeger.filledHorizontal(game.field, playerSign, position)
+      || GameManeger.filledVertical(game.field, playerSign, position)
+      || GameManeger.filledDiagonal(game.field, playerSign, position, firstDiagonalFunc)
+      || GameManeger.filledDiagonal(game.field, playerSign, position, secondDiagonalFunc)
+    ) {
+      return game.leadingPlayerId;
+    }
+    return GameManeger.NO_WINNER;
+  }
   private static filledHorizontal(
     field: string[],
     playerSign: string,
@@ -215,25 +259,17 @@ class GameManeger {
     }
     return filledDiagonal;
   }
-  public static findWinner(
-    game: Game,
-    position: Position,
-  ): number {
-    const playerSign: string = GameManeger.getLeadingPlayerSign(game);
-    const firstDiagonalFunc: () => number = (x: number, pos: Position) => {
-      return (x - pos.x) + pos.y;
-    };
-    const secondDiagonalFunc: () => number = (x: number, pos: Position) => {
-      return pos.y - (x - pos.x);
-    };
-    if (GameManeger.filledHorizontal(game.field, playerSign, position)
-      || GameManeger.filledVertical(game.field, playerSign, position)
-      || GameManeger.filledDiagonal(game.field, playerSign, position, firstDiagonalFunc)
-      || GameManeger.filledDiagonal(game.field, playerSign, position, secondDiagonalFunc)
-    ) {
-      return game.leadingPlayerId;
+
+  private static swapMoveLaw(game: Game) {
+    if (game.leadingPlayerId === game.creatorGameId) {
+      game.leadingPlayerId = game.participantId;
+    } else {
+      game.leadingPlayerId = game.creatorGameId;
     }
-    return GameManeger.NO_WINNER;
+  }
+
+  private static sendMessage(leadingPlayerId: number, message: string) {
+    logger.info("Send message:\"" + message.toString() + "\" for player with id=" + leadingPlayerId);
   }
 }
 
@@ -241,4 +277,5 @@ export {
   GameManeger,
   PlayerRole,
   Position,
+  ERROR_GAME_MESSAGES,
 };
