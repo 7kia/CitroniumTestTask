@@ -1,17 +1,19 @@
 /**
  * Created by Илья on 07.08.2018.
  */
+import {DataForCreation} from "../../Helpers";
+
 export class User {
     public id: number;
     public name: string;
     public email: string;
     public password: string;
     public accessToken: string;
-    constructor(data: any) {
-        this.id = data.id;
-        this.name = data.name;
-        this.email = data.email;
-        this.password = data.password;
-        this.accessToken = data.access_token;
+    constructor(data: DataForCreation) {
+        this.id = data.getValue("id");
+        this.name = data.getValue("name");
+        this.email = data.getValue("email");
+        this.password = data.getValue("password");
+        this.accessToken = data.getValue("access_token");
     }
 }

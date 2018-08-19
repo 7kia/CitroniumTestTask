@@ -9,39 +9,40 @@ import {logger} from "../../Logger";
 import * as pgPromise from "pg-promise";
 import QueryResultError = pgPromise.errors.QueryResultError;
 import {User} from "../Entity/User";
+import * as Collections from "typescript-collections";
+import {DataForCreation} from "../../Helpers";
+import Dictionary from "typescript-collections/dist/lib/Dictionary";
 
 class UserRepository extends Repository {
   public constructor(db: any, pgp: IMain) {
     super(db, pgp);
   }
 
-  public async find(searchParameters: {[id: string]: any}): User {
-    let properties: object = {};
+  public async find(searchParameters: DataForCreation): User {
+    let foundData: DataForCreation =  new Dictionary<string, any>();
+
     await this.db.one(Repository.getSelectQueueString("User", searchParameters))
       .then((data) => {
-        const foundData: {[id: string]: any} =  {
-          id: data.id,
-          name: data.name,
-          email: data.email,
-          password: data.password,
-          access_token: data.access_token,
-        };
-        properties = Helpers.copyByValue(foundData);
+        foundData.setValue("id", data.id);
+        foundData.setValue("name", data.name);
+        foundData.setValue("email", data.email);
+        foundData.setValue("password", data.password);
+        foundData.setValue("access_token", data.access_token);
       })
       .catch((error: Error) => {
         logger.error("Error to SELECT queue.");
         logger.error(error);
         throw new QueryResultError(error);
       });
-    const foundUser: User = new User(properties);
+    const foundUser: User = new User(foundData);
     logger.info(
-      "Found user with id=" + properties.id
+      "Found user with id=" + foundData.getValue("id")
       + ". Search parameters:" + Repository.generateNewDataString(searchParameters),
     );
     return foundUser;
   }
 
-  public async create(parameters: {[id: string]: any}) {
+  public async create(parameters: DataForCreation) {
     await this.db.none(Repository.getInsertQueueString("User", parameters))
       .then((data) => {
         logger.info(
@@ -55,18 +56,16 @@ class UserRepository extends Repository {
       });
   }
 
-  public async deleteUser(searchParameters: {[id: string]: any}) {
-    let properties: object = {};
+  public async deleteUser(searchParameters: DataForCreation) {
+    let foundData: DataForCreation =  new Dictionary<string, any>();
+
     await this.db.result(Repository.getDeleteQueueString("User", searchParameters))
-      .then((result) => {
-        const foundData =  {
-          id: result.id,
-          name: result.name,
-          email: result.email,
-          password: result.password,
-          access_token: result.access_token,
-        };
-        properties = Helpers.copyByValue(foundData);
+      .then((data) => {
+        foundData.setValue("id", data.id);
+        foundData.setValue("name", data.name);
+        foundData.setValue("email", data.email);
+        foundData.setValue("password", data.password);
+        foundData.setValue("access_token", data.access_token);
       })
       .catch((error: Error) => {
         logger.error("Error to DELETE queue.");
@@ -74,22 +73,18 @@ class UserRepository extends Repository {
         throw error;
       });
     logger.info(
-      "Delete user with id=" + properties.id
+      "Delete user with id=" + foundData.getValue("id")
       + ". Search parameters:" + Repository.generateCriteriaString(searchParameters),
     );
   }
 
-  public async update(user: User) {
-    const newData: {[id: string]: any} = {
-      name: user.name,
-      email: user.email,
-      password: user.password,
-      access_token: user.accessToken,
-    };
-    await this.db.none(Repository.getUpdateQueueString("User", {id: user.id}, newData))
+  public async update(userId: number, whatUpdate: DataForCreation) {
+    let searchParameters: DataForCreation = new Dictionary<string, any>();
+    searchParameters.setValue("id", userId);
+    await this.db.none(Repository.getUpdateQueueString("User", searchParameters, whatUpdate))
       .then((data) => {
         logger.info(
-          "Update user. New parameters:" + Repository.generateNewDataString(newData),
+          "Update user. New parameters:" + Repository.generateNewDataString(whatUpdate),
         );
       })
       .catch((error: Error) => {

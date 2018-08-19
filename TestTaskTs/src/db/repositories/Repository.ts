@@ -1,7 +1,9 @@
-import {IDatabase, IMain} from "pg-promise";
 /**
  * Created by Илья on 07.08.2018.
  */
+import {IDatabase, IMain} from "pg-promise";
+import * as Collections from "typescript-collections";
+import {DataForCreation} from "../../Helpers";
 
 export class Repository {
   private static generateStringValue(value: any) {
@@ -16,23 +18,23 @@ export class Repository {
       result += "}";
       return result;
     }
-    if (value === null) {
+    if ((value === null) || (value === undefined)) {
       return null;
     }
     return value.toString();
   }
   private static generateString(
-    data: {[id: string]: any},
+    data: DataForCreation,
     delimiter: string,
     generateValue: (key: string, value: string) => string,
   ): string {
     let criteriaString: string = "";
-    for (const key in data) {
-      if (data.hasOwnProperty(key) ) {//&& (data[key] !== null)
+    for (const key of data.keys()) {
+      if (data.containsKey(key) ) {
         if (criteriaString.length > 1) {
           criteriaString = criteriaString + delimiter;
         }
-        criteriaString = criteriaString + generateValue(key, Repository.generateStringValue(data[key]));
+        criteriaString = criteriaString + generateValue(key, Repository.generateStringValue(data.getValue(key)));
       }
     }
     return criteriaString;
@@ -40,14 +42,14 @@ export class Repository {
 
   public static getSelectQueueString(
       searchPlace: string,
-      criterias: {[id: string]: any},
+      criterias: DataForCreation,
   ): string {
       const criteriaString: string = Repository.generateCriteriaString(criterias);
 
       return "SELECT * FROM public.\"" + searchPlace + "\" " +
           "WHERE " + criteriaString;
   }
-  public static generateCriteriaString(criterias: {[id: string]: any}): string {
+  public static generateCriteriaString(criterias: DataForCreation): string {
     return Repository.generateString(
       criterias,
       " and ",
@@ -59,7 +61,7 @@ export class Repository {
       },
     );
   }
-  public static generateNewDataString(criterias: {[id: string]: any}): string {
+  public static generateNewDataString(criterias: DataForCreation): string {
     return Repository.generateString(
       criterias,
       ", ",
@@ -73,7 +75,7 @@ export class Repository {
   }
   public static getInsertQueueString(
     insertPlace: string,
-    data: {[id: string]: any},
+    data: DataForCreation,
   ): string {
       const valueString: string = Repository.generateValueString(data);
       const propertyString: string = Repository.generatePropertyString(data);
@@ -82,7 +84,7 @@ export class Repository {
         + propertyString + ")"
         + "VALUES (" + valueString + ")";
   }
-  public static generateValueString(data: {[id: string]: any}): string {
+  public static generateValueString(data: DataForCreation): string {
     return Repository.generateString(
       data,
       ", ",
@@ -94,7 +96,7 @@ export class Repository {
       },
     );
   }
-  public static generatePropertyString(data: {[id: string]: any}): string {
+  public static generatePropertyString(data: DataForCreation): string {
     return Repository.generateString(
       data,
       ", ",
@@ -105,7 +107,7 @@ export class Repository {
   }
   public static getDeleteQueueString(
     insertPlace: string,
-    criterias: {[id: string]: any},
+    criterias: DataForCreation,
   ): string {
     const criteriaString: string = Repository.generateCriteriaString(criterias);
     return "DELETE FROM public.\"" + insertPlace + "\" "
@@ -114,8 +116,8 @@ export class Repository {
 
   public static getUpdateQueueString(
     insertPlace: string,
-    criterias: {[id: string]: any},
-    newData: {[id: string]: any},
+    criterias: DataForCreation,
+    newData: DataForCreation,
   ): string {
     const criteriaString: string = Repository.generateCriteriaString(criterias);
     const newDataString: string = Repository.generateNewDataString(newData);

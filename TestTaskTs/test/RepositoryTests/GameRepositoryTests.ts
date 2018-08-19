@@ -5,53 +5,60 @@ import { assert } from "chai";
 import "mocha";
 import {postgreSqlManager} from "../../src/db";
 import {Game} from "../../src/db/Entity/Game";
-import {Repository} from "../../src/db/repositories/Repository";
 import * as pgPromise from "pg-promise";
 import QueryResultError = pgPromise.errors.QueryResultError;
 import {logger} from "../../src/Logger";
+import * as Collections from "typescript-collections";
+import Dictionary from "typescript-collections/dist/lib/Dictionary";
+import {DataForCreation} from "../../src/Helpers";
 
 describe("GameDataRepository. " +
   "Позволяет брать и редактировать данные игровых партий.", () => {
-  const deleteGameIfExist = async (gameData: {[id: string]: any} ) => {
+  const deleteGameIfExist = async (gameData: DataForCreatrion ) => {
     try {
-      const foundGames: Game[] = await postgreSqlManager.games.find( gameData );
+      const foundGames: Game[] = await postgreSqlManager.games.find(gameData);
       if (foundGames) {
-        await postgreSqlManager.games.deleteGame( gameData );
+        await postgreSqlManager.games.deleteGame(gameData);
       }
     } catch (error: any) {
       logger.info("Удалены тестовое данные");
     }
   };
   it("Можно найти игровую партию по различным характеристикам.", async () => {
-    const games: Game[] = await postgreSqlManager.games.find( { id: "0" } );
-    const games2: Game[] = await postgreSqlManager.games.find( { creator_game_id: "2", field_size: "2" } );
+    let gameData: DataForCreation = new Dictionary<string, any>();
+    gameData.setValue("id", 0);
+    let gameData2: DataForCreation = new Dictionary<string, any>();
+    gameData2.setValue("creator_game_id", 2);
+    gameData2.setValue("field_size", 2);
+    const games: Game[] = await postgreSqlManager.games.find(gameData);
+    const games2: Game[] = await postgreSqlManager.games.find(gameData2);
 
     assert.strictEqual(games.length, 1);
     assert.strictEqual(games2.length, 1);
-    assert.strictEqual(games[0].id, 0);
+    assert.strictEqual(games[0].id, gameData.getValue("id"));
     assert.strictEqual(games2[0].id, 1);
   });
   it("Можно создать и удалить игровую партию.", async () => {
-    const gameData: {[id: string]: any} = {
-      creator_game_id: 4,
-      participant_id: 5,
-      field_size: 9,
-      field: ["???", "???", "???"],
-      access_token: "gameDeleteAndCreate",
-      time: 0,
-      leading_player_id: 4,
-    };
+    let gameData: DataForCreation = new Dictionary<string, any>();
+    gameData.setValue("creator_game_id", 4);
+    gameData.setValue("participant_id", 5);
+    gameData.setValue("field_size", 9);
+    gameData.setValue("field", ["???", "???", "???"]);
+    gameData.setValue("access_token", "gameDeleteAndCreate");
+    gameData.setValue("time", 0);
+    gameData.setValue("leading_player_id", 4);
+
     await deleteGameIfExist(gameData);
 
     await postgreSqlManager.games.create(gameData);
     const foundGames: Game[] = await postgreSqlManager.games.find(gameData);
     assert.strictEqual(foundGames.length, 1);
-    assert.strictEqual(foundGames[0].creatorGameId, gameData.creator_game_id);
-    assert.strictEqual(foundGames[0].participantId, gameData.participant_id);
-    assert.strictEqual(foundGames[0].fieldSize, gameData.field_size);
-    assert.strictEqual(foundGames[0].accessToken, gameData.access_token);
-    assert.strictEqual(foundGames[0].time, gameData.time);
-    assert.strictEqual(foundGames[0].leadingPlayerId, gameData.leading_player_id);
+    assert.strictEqual(foundGames[0].creatorGameId, gameData.getValue("creator_game_id"));
+    assert.strictEqual(foundGames[0].participantId, gameData.getValue("participant_id"));
+    assert.strictEqual(foundGames[0].fieldSize, gameData.getValue("field_size"));
+    assert.strictEqual(foundGames[0].accessToken, gameData.getValue("access_token"));
+    assert.strictEqual(foundGames[0].time, gameData.getValue("time"));
+    assert.strictEqual(foundGames[0].leadingPlayerId, gameData.getValue("leading_player_id"));
 
     await postgreSqlManager.games.deleteGame( gameData );
     // TODO : не ловит исключение
@@ -63,53 +70,40 @@ describe("GameDataRepository. " +
     // );
   });
   it("Можно обновить данные игровой партии.", async () => {
-    const gameData: {[id: string]: any} = {
-      creator_game_id: 6,
-      participant_id: 7,
-      field_size: 9,
-      field: ["???", "???", "???"],
-      access_token: "gameUpdate",
-      time: 0,
-      leading_player_id: 6,
-    };
-    const newGameData: {[id: string]: any} = {
-      field: ["?X?", "???", "???"],
-      time: 0.5,
-      leading_player_id: 7,
-    };
-    await deleteGameIfExist(gameData);
-    await deleteGameIfExist(newGameData);
+    let gameData: DataForCreation = new Dictionary<string, any>();
+    gameData.setValue("creator_game_id", 6);
+    gameData.setValue("participant_id", 7);
+    gameData.setValue("field_size", 9);
+    gameData.setValue("field", ["???", "???", "???"]);
+    gameData.setValue("access_token", "gameUpdate");
+    gameData.setValue("time", 0);
+    gameData.setValue("leading_player_id", 6);
+    let newGameData: DataForCreation = new Dictionary<string, any>();
+    newGameData.setValue("field", ["?X?", "???", "???"]);
+    newGameData.setValue("time", 0.5);
+    newGameData.setValue("leading_player_id", 7);
+    let createdGameData: DataForCreation = new Dictionary<string, any>();
+    createdGameData.setValue("access_token", "gameUpdate");
+
+    await deleteGameIfExist(createdGameData);
 
     await postgreSqlManager.games.create(gameData);
 
-    let games: Game[] = await postgreSqlManager.games.find(
-      {
-        creator_game_id: gameData.creator_game_id,
-        participant_id: gameData.participant_id,
-      },
-    );
+    let games: Game[] = await postgreSqlManager.games.find(createdGameData);
     let game: Game = games[0];
-    game.field = newGameData.field;
-    game.time = newGameData.time;
-    game.leadingPlayerId = newGameData.leading_player_id;
 
-    await postgreSqlManager.games.update(game);
-    const updateGames: Game[] = await postgreSqlManager.games.find(
-      {
-        creator_game_id: gameData.creator_game_id,
-        participant_id: gameData.participant_id,
-      },
-    );
+    let whatUpdate: Dictionary<string, boolean> = new Dictionary<string, boolean>();
+    whatUpdate.setValue("field", newGameData.getValue("field"));
+    whatUpdate.setValue("time", newGameData.getValue("time"));
+    whatUpdate.setValue("leading_player_id", newGameData.getValue("leading_player_id"));
+    await postgreSqlManager.games.update(game.id, whatUpdate);
+
+    const updateGames: Game[] = await postgreSqlManager.games.find(createdGameData);
     const updateGame: Game = updateGames[0];
-    assert.deepEqual(updateGame.field, newGameData.field);
-    assert.strictEqual(updateGame.time, newGameData.time);
-    assert.strictEqual(updateGame.leadingPlayerId, newGameData.leading_player_id);
+    assert.deepEqual(updateGame.field, newGameData.getValue("field"));
+    assert.strictEqual(updateGame.time, newGameData.getValue("time"));
+    assert.strictEqual(updateGame.leadingPlayerId, newGameData.getValue("leading_player_id"));
 
-    await postgreSqlManager.games.deleteGame(
-      {
-        creator_game_id: gameData.creator_game_id,
-        participant_id: gameData.participant_id,
-      },
-    );
+    await postgreSqlManager.games.deleteGame(createdGameData);
   });
 });

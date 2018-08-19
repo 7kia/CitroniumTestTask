@@ -1,17 +1,9 @@
 /**
  * Created by Илья on 10.08.2018.
  */
-class Helpers {
-  public static copyByValue(mainObj): any {
-    let objCopy = {}; // objCopy will store a copy of the mainObj
-    for (let key in mainObj) {
-      if (mainObj.hasOwnProperty(key)){
-        objCopy[key] = mainObj[key]; // copies each property to the objCopy object
-      }
-    }
-    return objCopy;
-  }
+import Dictionary from "typescript-collections/dist/lib/Dictionary";
 
+class Helpers {
   public static replaceAt(
     changeString: string,
     index: number,
@@ -21,6 +13,11 @@ class Helpers {
   }
 }
 
+type DataForCreation = Dictionary<string, any>;
+type WhatUpdate = Dictionary<string, boolean>;
+
 export {
   Helpers,
+  DataForCreation,
+  WhatUpdate,
 };
