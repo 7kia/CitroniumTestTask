@@ -3,8 +3,7 @@
  */
 import { assert } from "chai";
 import "mocha";
-import * as Collections from "typescript-collections";
-import {DataForCreation, Helpers, WhatUpdate} from "../../src/Helpers";
+import {Helpers} from "../../src/Helpers";
 
 describe("Helpers." +
   "Содержит в себе вспомогательные функции.", () => {

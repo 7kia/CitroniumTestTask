@@ -8,7 +8,7 @@
     "compile": "node build.js && backpack build",
     "dev": "node build.js && backpack dev | pino -o 'short'",
     "debug": "node build.js && backpack dev --inspect-brk | pino -o 'short'",
-    "test": "node build.js && nyc --reporter=text mocha test/**/*.ts --exit",
+    "test": "node build.js && nyc --reporter=text mocha --recursive src/**/*.ts --exit",
     "grunt": "grunt"
   },
   "dependencies": {
@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.22",
-    "@types/chai": "^4.1.2",
+    "@types/chai": "^4.1.4",
     "@types/express": "^4.0.35",
     "@types/jquery": "^3.3.5",
     "@types/mocha": "^2.2.48",
@@ -64,12 +64,27 @@
     "statements": 99,
     "functions": 99,
     "branches": 99,
+    "cache": true,
+    "all": true,
+    "sourceMap": true,
+    "instrument": true,
     "include": [
-      "src/**/*.js"
+      "src/**/*.ts"
     ],
     "exclude": [
       "**/node_modules/**",
-      "**/test/**"
+      "**/test/**",
+      "**/src/Logger.ts",
+      "**/src/db/index.ts",
+      "**/*.d.ts"
+    ],
+    "reporter": [
+      "lcov",
+      "text-summary"
+    ],
+    "extension": [
+      ".ts",
+      ".tsx"
     ]
   },
   "author": "Carmine DiMascio <cdimascio@gmail.com> (https://github.com/cdimascio)"

@@ -18,9 +18,8 @@ class UserRepository extends Repository {
     super(db, pgp);
   }
 
-  public async find(searchParameters: DataForCreation): User {
+  public async find(searchParameters: DataForCreation): Promise<User> {
     let foundData: DataForCreation =  new Dictionary<string, any>();
-
     await this.db.one(Repository.getSelectQueueString("User", searchParameters))
       .then((data) => {
         foundData.setValue("id", data.id);
@@ -31,18 +30,20 @@ class UserRepository extends Repository {
       })
       .catch((error: Error) => {
         logger.error("Error to SELECT queue.");
-        logger.error(error);
-        throw new QueryResultError(error);
+        logger.error(error.toString());
+        throw new QueryResultError(error.toString());
       });
-    const foundUser: User = new User(foundData);
-    logger.info(
-      "Found user with id=" + foundData.getValue("id")
-      + ". Search parameters:" + Repository.generateNewDataString(searchParameters),
-    );
-    return foundUser;
+
+    return new Promise<User>((resolve) => {
+      logger.info(
+        "Found user with id=" + foundData.getValue("id")
+        + ". Search parameters:" + Repository.generateNewDataString(searchParameters),
+      );
+      resolve(new User(foundData));
+    });
   }
 
-  public async create(parameters: DataForCreation) {
+  public async create(parameters: DataForCreation): Promise<void> {
     await this.db.none(Repository.getInsertQueueString("User", parameters))
       .then((data) => {
         logger.info(
@@ -56,29 +57,21 @@ class UserRepository extends Repository {
       });
   }
 
-  public async deleteUser(searchParameters: DataForCreation) {
-    let foundData: DataForCreation =  new Dictionary<string, any>();
-
+  public async deleteUser(searchParameters: DataForCreation): Promise<void> {
     await this.db.result(Repository.getDeleteQueueString("User", searchParameters))
-      .then((data) => {
-        foundData.setValue("id", data.id);
-        foundData.setValue("name", data.name);
-        foundData.setValue("email", data.email);
-        foundData.setValue("password", data.password);
-        foundData.setValue("access_token", data.access_token);
+      .then(() => {
+        logger.info(
+          "Delete user. Search parameters:" + Repository.generateCriteriaString(searchParameters),
+        );
       })
       .catch((error: Error) => {
         logger.error("Error to DELETE queue.");
         logger.error(error);
         throw error;
       });
-    logger.info(
-      "Delete user with id=" + foundData.getValue("id")
-      + ". Search parameters:" + Repository.generateCriteriaString(searchParameters),
-    );
   }
 
-  public async update(userId: number, whatUpdate: DataForCreation) {
+  public async update(userId: number, whatUpdate: DataForCreation): Promise<void> {
     let searchParameters: DataForCreation = new Dictionary<string, any>();
     searchParameters.setValue("id", userId);
     await this.db.none(Repository.getUpdateQueueString("User", searchParameters, whatUpdate))

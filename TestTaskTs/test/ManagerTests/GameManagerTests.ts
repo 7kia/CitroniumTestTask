@@ -1,12 +1,12 @@
 /**
  * Created by Илья on 11.08.2018.
  */
-import { assert, expect, should } from "chai";
+import { assert } from "chai";
 import "mocha";
 import {postgreSqlManager} from "../../src/db";
 import {DataForCreation, Game} from "../../src/db/Entity/Game";
 import {logger} from "../../src/Logger";
-import {ERROR_GAME_MESSAGES, GameManeger, PlayerRole, Position} from "../../src/Managers/GameManager";
+import {ERROR_GAME_MESSAGES, GameManeger, PlayerRole, Position} from "../../src/GameManager";
 import {User} from "../../src/db/Entity/User";
 import {GameReport} from "../../src/db/Entity/GameReport";
 import * as Parallel from "async-parallel";
@@ -15,7 +15,17 @@ import Dictionary from "typescript-collections/dist/lib/Dictionary";
 describe("GameManeger. " +
   "Менеджер игры. Позволяет игрокам взаимодействовать с конкретной " +
   "игровой партией, искать и подключаться к партиям.", () => {
-  const deleteGameIfExist = async (gameData: DataForCreation) => {
+  const assertThrowsAsync: () => Promise<void> = async (testFunc: () => any, regExp) => {
+    let func = () => {};
+    try {
+      await testFunc();
+    } catch (error: Error) {
+      func = () => {throw error};
+    } finally {
+      assert.throws(func, regExp);
+    }
+  };
+  const deleteGameIfExist: () => Promie<void> = async (gameData: DataForCreation) => {
     try {
       const foundGames: Game[] = await postgreSqlManager.games.find(gameData);
       if (foundGames) {
@@ -142,11 +152,11 @@ describe("GameManeger. " +
     assert.strictEqual(gameTime, 0);
   });
 
-  const deleteUserIfExist = async (userData: {[id: string]: any} ) => {
+  const deleteUserIfExist = async (userData:DataForCreation ) => {
     try {
-      const foundUser: User = await postgreSqlManager.users.find( userData );
+      const foundUser: User = await postgreSqlManager.users.find(userData);
       if (foundUser) {
-        await postgreSqlManager.users.deleteUser( userData );
+        await postgreSqlManager.users.deleteUser(userData);
       }
     } catch (error: any) {
       console.log("Удалены тестовое данные");
@@ -195,16 +205,7 @@ describe("GameManeger. " +
       await postgreSqlManager.users.deleteUser(participantPlayerData);
     };
 
-    const assertThrowsAsync: () => void = async (testFunc: () => any, regExp) => {
-      let func = () => {};
-      try {
-        await testFunc();
-      } catch (error: Error) {
-        func = () => {throw error};
-      } finally {
-        assert.throws(func, regExp);
-      }
-    };
+
     describe("Если игрок участвует в этой партии.", async () => {
       it("Если игрок сходил в не пустую клетку, то будет брошено исключение.", async () => {
         let creatorData: DataForCreation = new Dictionary<string, any>();
@@ -626,20 +627,15 @@ describe("GameManeger. " +
   });
 
   describe("Может создать и запустить партию.", async () => {
-    it("Партия уничтожается если игроки не ходят в течении " +
-      "5 минут.", async () => {
-      assert.strictEqual(false, true);
-    });
     it("Партия заканчивается когда кто-нибудь выигрывает", async () => {
-      const creatorData: DataForCreation = {
-        name: "CreatorGameMove",
-        email: "CreatorGameMove.e@com",
-      };
-      const participantData: DataForCreation = {
-        name: "ParticipantGameMove",
-        email: "ParticipantGameMove.e@com",
-      };
+      let creatorData: DataForCreation = new Dictionary<string, any>();
+      creatorData.setValue("name", "CreatorGameMoveWinner");
+      creatorData.setValue("email", "CreatorGameMoveWinner@e.com");
+      let participantData: DataForCreation = new Dictionary<string, any>();
+      participantData.setValue("name", "ParticipantGameMoveLoser");
+      participantData.setValue("email", "ParticipantGameMoveLoser@e.com");
       const fieldSize: number = 3;
+
       await deleteUserIfExist(creatorData);
       await deleteUserIfExist(participantData);
       await postgreSqlManager.users.create(creatorData);
@@ -649,37 +645,41 @@ describe("GameManeger. " +
       const participant: User = await postgreSqlManager.users.find(participantData);
 
       const createdGameId: number = await GameManeger.createGameAndConnectCreator(creator.id, fieldSize);
-      await GameManeger.connectPlayer(participant.id, createdGameId);
-      await GameManeger.waitParticipant(createdGameId);
+      let searchGameData: DataForCreation = new Dictionary<string, any>();
+      searchGameData.setValue("id", createdGameId);
 
-      try{
-        await Parallel.invoke(
-          [
-            async () => {
-              GameManeger.runGame(createdGameId);
-            },
-            async () => {
-              await GameManeger.takePlayerMove(creator.id, new Position(0, 0), createdGameId);
-              await GameManeger.takePlayerMove(participant.id, new Position(1, 0), createdGameId);
-              await GameManeger.takePlayerMove(creator.id, new Position(1, 1), createdGameId);
-              await GameManeger.takePlayerMove(participant.id, new Position(0, 1), createdGameId);
-              await GameManeger.takePlayerMove(creator.id, new Position(2, 2), createdGameId);
-            },
-          ],
-        );
-      } catch (e) {
-        logger.errror(e);
-      }
+      await Parallel.invoke(
+        [
+          async () => {
+            await GameManeger.waitParticipant(createdGameId);
+          },
+          async () => {
+            await GameManeger.connectPlayer(participant.id, createdGameId);
+          },
+        ],
+      );
+      await Parallel.invoke(
+        [
+          async () => {
+            await GameManeger.runGame(createdGameId);
+          },
+          async () => {
+            await GameManeger.takePlayerMove(creator.id, new Position(0, 0), createdGameId);
+            await GameManeger.takePlayerMove(participant.id, new Position(1, 0), createdGameId);
+            await GameManeger.takePlayerMove(creator.id, new Position(1, 1), createdGameId);
+            await GameManeger.takePlayerMove(participant.id, new Position(0, 1), createdGameId);
+            await GameManeger.takePlayerMove(creator.id, new Position(2, 2), createdGameId);
+          },
+        ],
+      );
 
-
-      const foundGames: Game[] = await postgreSqlManager.games.find({id: createdGameId});
+      const foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
       const game: Game = foundGames[0];
 
       assert.strictEqual(game.winPlayerId, game.creatorGameId);
-
       await postgreSqlManager.users.deleteUser(creatorData);
       await postgreSqlManager.users.deleteUser(participantData);
-      await postgreSqlManager.games.deleteGame({id: createdGameId});
+      await deleteGameIfExist(searchGameData);
     });
   });
 });
