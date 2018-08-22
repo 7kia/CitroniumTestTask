@@ -81,47 +81,45 @@ class GameManeger {
     playerId: number,
     gameId: number,
   ): Promise<PlayerRole> {
-    return new Promise<PlayerRole>(async (resolve) => {
-      let searchGameData: DataForCreation = new Dictionary<string, any>();
-      searchGameData.setValue("id", gameId);
-      let searchPlayerData: DataForCreation = new Dictionary<string, any>();
-      searchPlayerData.setValue("id", playerId);
+    let searchGameData: DataForCreation = new Dictionary<string, any>();
+    searchGameData.setValue("id", gameId);
+    let searchPlayerData: DataForCreation = new Dictionary<string, any>();
+    searchPlayerData.setValue("id", playerId);
 
-      const player: User = await postgreSqlManager.users.find(searchPlayerData);
-      const games: Game[] = await postgreSqlManager.games.find(searchGameData);
-      const game: Game = games[0];
-      if (player.accessToken && (player.accessToken === game.accessToken)) {
-        if (player.id === game.creatorGameId) {
-          resolve(PlayerRole.Creator);
-        } else if (player.id === game.participantId) {
-          resolve(PlayerRole.Participant);
-        }
+    const player: User = await postgreSqlManager.users.find(searchPlayerData);
+    const games: Game[] = await postgreSqlManager.games.find(searchGameData);
+    const game: Game = games[0];
+    let role: PlayerRole = PlayerRole.Observer;
+    if (player.accessToken && (player.accessToken === game.accessToken)) {
+      if (player.id === game.creatorGameId) {
+        role = PlayerRole.Creator;
+      } else if (player.id === game.participantId) {
+        role = PlayerRole.Participant;
       }
-      resolve(PlayerRole.Observer);
-    });
+    }
+    return Promise.resolve(role);
   }
 
   public static async canStandParticipant(
     playerId: number,
     gameId: number,
   ): Promise<boolean> {
-    return new Promise<boolean>(async (resolve, reject) => {
-      let searchGameData: DataForCreation = new Dictionary<string, any>();
-      searchGameData.setValue("id", gameId);
-      let searchPlayerData: DataForCreation = new Dictionary<string, any>();
-      searchPlayerData.setValue("id", playerId);
+    let searchGameData: DataForCreation = new Dictionary<string, any>();
+    searchGameData.setValue("id", gameId);
+    let searchPlayerData: DataForCreation = new Dictionary<string, any>();
+    searchPlayerData.setValue("id", playerId);
 
-      const player: User = await postgreSqlManager.users.find(searchPlayerData);
-      const role: PlayerRole = await GameManeger.getRoleToGame(playerId, gameId);
-      const games: Game[] = await postgreSqlManager.games.find(searchGameData);
-      const game: Game = games[0];
-      if (role === PlayerRole.Observer) {
-        if (!player.accessToken && !game.participantId) {
-          resolve(true);
-        }
+    const player: User = await postgreSqlManager.users.find(searchPlayerData);
+    const role: PlayerRole = await GameManeger.getRoleToGame(playerId, gameId);
+    const games: Game[] = await postgreSqlManager.games.find(searchGameData);
+    const game: Game = games[0];
+
+    if (role === PlayerRole.Observer) {
+      if (!player.accessToken && !game.participantId) {
+        return Promise.resolve(true);
       }
-      resolve(false);
-    });
+    }
+    return Promise.resolve(false);
   }
 
   public static async connectPlayer(playerId: number, gameId: number): Promise<boolean> {
@@ -148,9 +146,7 @@ class GameManeger {
       await postgreSqlManager.games.update(game.id, newGameData);
       await postgreSqlManager.users.update(user.id, newUserData);
     }
-    return new Promise<boolean>((resolve, reject) => {
-      resolve(willParticipant);
-    });
+    return Promise.resolve(willParticipant);
   }
   public static async unconnectPlayer(playerId: number): Promise<void> {
     let userData: DataForCreation = new Dictionary<string, any>();
@@ -160,15 +156,12 @@ class GameManeger {
   }
 
   public static async getGameTime(gameId: number): Promise<number> {
-    return new Promise<number>(async (resolve, reject) => {
-      let gameSearchData: DataForCreation = new Dictionary<string, any>();
-      gameSearchData.setValue("id", gameId);
+    let gameSearchData: DataForCreation = new Dictionary<string, any>();
+    gameSearchData.setValue("id", gameId);
 
-      const foundGames: Game[] = await postgreSqlManager.games.find(gameSearchData);
-      const game: Game = foundGames[0];
-
-      resolve(game.time);
-    });
+    const foundGames: Game[] = await postgreSqlManager.games.find(gameSearchData);
+    const game: Game = foundGames[0];
+    return Promise.resolve(game.time);
   }
   public static async takePlayerMove(
     playerId: number,

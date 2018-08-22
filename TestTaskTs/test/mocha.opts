@@ -1,5 +1,4 @@
 --ui mocha-typescript
---require source-map-support/register
 --compilers ts-node/register
 --require source-map-support/register
 --full-trace
