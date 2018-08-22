@@ -9,7 +9,7 @@ import "mocha";
 import {postgreSqlManager} from "../src/db";
 import {DataForCreation, Game} from "../src/db/Entity/Game";
 import {logger} from "../src/Logger";
-import {ERROR_GAME_MESSAGES, GameManeger, PlayerRole} from "../src/GameManager";
+import {Cell, ERROR_GAME_MESSAGES, GameManeger, PlayerRole} from "../src/GameManager";
 import {User} from "../src/db/Entity/User";
 import {GameReport} from "../src/db/Entity/GameReport";
 import * as Parallel from "async-parallel";
@@ -77,6 +77,10 @@ describe("GameManeger. " +
 
     assert.strictEqual(games4[0].id, 1);
     assert.strictEqual(games5[0].id, 1);
+  });
+
+  it("Игрок может отсутствовать в игре не более 5 минут.", async () => {
+    assert.strictEqual(GameManeger.MAX_INACTIVE_TIME, 300000);
   });
 
   describe("Может дать роль игрока в конкретной партии", async () => {
@@ -166,50 +170,128 @@ describe("GameManeger. " +
       console.log("Удалены тестовое данные");
     }
   };
-  describe("Может принять ход то игрока", async () => {
-    const testPlayerMoveToGame = async (
-      creatorPlayerData: DataForCreation,
-      participantPlayerData: DataForCreation,
-      startGameData: DataForCreation,
-      playerActions: (creator: User, participant: User, game: Game) => void,
-    ) => {
-      await deleteUserIfExist(creatorPlayerData);
-      await deleteUserIfExist(participantPlayerData);
-      await postgreSqlManager.users.create(creatorPlayerData);
-      await postgreSqlManager.users.create(participantPlayerData);
-      let creator: User = await postgreSqlManager.users.find(creatorPlayerData);
-      let participant: User = await postgreSqlManager.users.find(participantPlayerData);
 
+  enum WhoMove {
+    Nobody = 0,
+    Creator,
+    Participant,
+  }
+  const testPlayerMoveToGame = async (
+    creatorPlayerData: DataForCreation,
+    participantPlayerData: DataForCreation,
+    startGameData: DataForCreation,
+    actions: (creator: User, participant: User, game: Game) => void,
+    whoMove: WhoMove,
+  ) => {
+    await deleteUserIfExist(creatorPlayerData);
+    await deleteUserIfExist(participantPlayerData);
+    await postgreSqlManager.users.create(creatorPlayerData);
+    await postgreSqlManager.users.create(participantPlayerData);
+    let creator: User = await postgreSqlManager.users.find(creatorPlayerData);
+    let participant: User = await postgreSqlManager.users.find(participantPlayerData);
+
+    let gameData: DataForCreation = new Dictionary<string, any>();
+    gameData.setValue("field_size", startGameData.getValue("field_size"));
+    gameData.setValue("field", startGameData.getValue("field"));
+    gameData.setValue("access_token", startGameData.getValue("access_token"));
+    gameData.setValue("time", startGameData.getValue("time"));
+    let leadingPlayerId: number = null;
+    switch (whoMove) {
+      case WhoMove.Creator: {
+        leadingPlayerId = creator.id;
+        break;
+      }
+      case WhoMove.Participant: {
+        leadingPlayerId = participant.id;
+        break;
+      }
+    }
+    gameData.setValue("leading_player_id", leadingPlayerId);
+
+    let searchGameData: DataForCreation = new Dictionary<string, any>();
+    searchGameData.setValue("access_token", startGameData.getValue("access_token"));
+
+    await deleteGameIfExist(searchGameData);
+    await postgreSqlManager.games.create(gameData);
+
+    let foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
+    let game: Game = foundGames[0];
+
+    await GameManeger.connectPlayer(creator.id, game.id);
+    await GameManeger.connectPlayer(participant.id, game.id);
+
+    creator = await postgreSqlManager.users.find(creatorPlayerData);
+    participant = await postgreSqlManager.users.find(participantPlayerData);
+    foundGames = await postgreSqlManager.games.find(searchGameData);
+    game = foundGames[0];
+    await actions(creator, participant, game);
+
+    await postgreSqlManager.games.deleteGame(searchGameData);
+    await postgreSqlManager.users.deleteUser(creatorPlayerData);
+    await postgreSqlManager.users.deleteUser(participantPlayerData);
+  };
+  describe("Может дать знак ходящего игрока.", async () => {
+    it("Если ходит создатель, то будет крестик.", async () => {
+      let creatorData: DataForCreation = new Dictionary<string, any>();
+      creatorData.setValue("name", "PlayerCreatorSign_X");
+      let participantData: DataForCreation = new Dictionary<string, any>();
+      participantData.setValue("name", "PlayerParticipantSign_X");
       let gameData: DataForCreation = new Dictionary<string, any>();
-      gameData.setValue("field_size", startGameData.getValue("field_size"));
-      gameData.setValue("field", startGameData.getValue("field"));
-      gameData.setValue("access_token", startGameData.getValue("access_token"));
-      gameData.setValue("time", startGameData.getValue("time"));
-      gameData.setValue("leading_player_id", creator.id);
+      gameData.setValue("access_token", "PlayerParticipantSign_X");
 
-      let searchGameData: DataForCreation = new Dictionary<string, any>();
-      searchGameData.setValue("access_token", startGameData.getValue("access_token"));
+      await testPlayerMoveToGame(
+        creatorData,
+        participantData,
+        gameData,
+        (creator: User, participant: User, game: Game): void => {
+          assert.strictEqual(GameManeger.getLeadingPlayerSign(game), "X");
+        },
+        WhoMove.Creator,
+      );
+    });
+    it("Если ходит участник, то будет нолик.", async () => {
+      let creatorData: DataForCreation = new Dictionary<string, any>();
+      creatorData.setValue("name", "PlayerCreatorSign_0");
+      let participantData: DataForCreation = new Dictionary<string, any>();
+      participantData.setValue("name", "PlayerParticipantSign_0");
+      let gameData: DataForCreation = new Dictionary<string, any>();
+      gameData.setValue("access_token", "PlayerParticipantSign_0");
 
-      await deleteGameIfExist(searchGameData);
-      await postgreSqlManager.games.create(gameData);
-      let foundGames: Game[] = await postgreSqlManager.games.find(gameData);
-      let game: Game = foundGames[0];
+      await testPlayerMoveToGame(
+        creatorData,
+        participantData,
+        gameData,
+        (creator: User, participant: User, game: Game): void => {
+          assert.strictEqual(GameManeger.getLeadingPlayerSign(game), "0");
+        },
+        WhoMove.Participant,
+      );
+    });
+    it("Если ходящего игрока нет, то будет брошено исключение.", async () => {
+      let creatorData: DataForCreation = new Dictionary<string, any>();
+      creatorData.setValue("name", "PlayerCreator_leadingNotSet");
+      let participantData: DataForCreation = new Dictionary<string, any>();
+      participantData.setValue("name", "PlayerParticipantSign_leadingNotSet");
+      let gameData: DataForCreation = new Dictionary<string, any>();
+      gameData.setValue("access_token", "PlayerParticipantSign_leadingNotSet");
 
-      await GameManeger.connectPlayer(creator.id, game.id);
-      await GameManeger.connectPlayer(participant.id, game.id);
-
-      creator = await postgreSqlManager.users.find(creatorPlayerData);
-      participant = await postgreSqlManager.users.find(participantPlayerData);
-      foundGames = await postgreSqlManager.games.find(searchGameData);
-      game = foundGames[0];
-      await playerActions(creator, participant, game);
-
-      await postgreSqlManager.games.deleteGame(searchGameData);
-      await postgreSqlManager.users.deleteUser(creatorPlayerData);
-      await postgreSqlManager.users.deleteUser(participantPlayerData);
-    };
-
-
+      await testPlayerMoveToGame(
+        creatorData,
+        participantData,
+        gameData,
+        (creator: User, participant: User, game: Game): void => {
+          assert.throws(
+            () => {
+              assert.strictEqual(GameManeger.getLeadingPlayerSign(game), "X");
+            },
+            Error,
+          );
+        },
+        WhoMove.Nobody,
+      );
+    });
+  });
+  describe("Может принять ход то игрока", async () => {
     describe("Если игрок участвует в этой партии.", async () => {
       it("Если игрок сходил в не пустую клетку, то будет брошено исключение.", async () => {
         let creatorData: DataForCreation = new Dictionary<string, any>();
@@ -239,6 +321,7 @@ describe("GameManeger. " +
             assert.strictEqual(game.winPlayerId, null);
             assert.strictEqual(game.leadingPlayerId, creator.id);
           },
+          WhoMove.Creator,
         );
       });
       describe("Если ход корректный.", async () => {
@@ -279,6 +362,7 @@ describe("GameManeger. " +
               assert.strictEqual(game.winPlayerId, null);
               assert.strictEqual(game.leadingPlayerId, creator.id);
             },
+            WhoMove.Creator,
           );
         });
         it("Если после хода игрок выиграл, то он отмечается как победитель " +
@@ -317,6 +401,7 @@ describe("GameManeger. " +
                 ERROR_GAME_MESSAGES.gameEnd,
               );
             },
+            WhoMove.Creator,
           );
         });
         it("Когда игрок ходит фиксируется время последнего хода.", async () => {
@@ -347,6 +432,7 @@ describe("GameManeger. " +
               game = foundGames[0];
               assert.strictEqual(game.lastMoveTime, gameData.getValue("time"));
             },
+            WhoMove.Creator,
           );
         });
       });
@@ -384,6 +470,7 @@ describe("GameManeger. " +
             assert.strictEqual(game.winPlayerId, null);
             assert.strictEqual(game.leadingPlayerId, creator.id);
           },
+          WhoMove.Creator,
         );
       });
     });
@@ -429,6 +516,7 @@ describe("GameManeger. " +
 
             await postgreSqlManager.users.deleteUser(observerData);
           },
+          WhoMove.Creator,
         );
       });
     });

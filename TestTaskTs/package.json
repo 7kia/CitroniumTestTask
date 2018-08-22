@@ -73,7 +73,8 @@
     ],
     "exclude": [
       "**/node_modules/**",
-      "**/test/**"
+      "**/test/**",
+      "**/src/Logger.ts"
     ]
   },
   "author": "Carmine DiMascio <cdimascio@gmail.com> (https://github.com/cdimascio)"

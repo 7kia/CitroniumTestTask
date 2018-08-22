@@ -17,6 +17,7 @@ class GameRepository extends Repository {
   }
 
   public async find(searchParameters: DataForCreation): Promise<Game[]> {
+    return new Promise<Game[]>(async (resolve, reject) => {
     let properties: DataForCreation[] = [];
     await this.db.many(Repository.getSelectQueueString("Game", searchParameters))
       .then((data) => {
@@ -36,15 +37,12 @@ class GameRepository extends Repository {
           properties.push(foundData);
         }
       })
-      .catch((error: Error) => {
+      .catch((error) => {
         logger.error("Error to SELECT queue.");
         logger.error(error.toString());
-        throw new QueryResultError(error.toString());
+        reject(new Error(error.toString()));
       });
 
-
-
-    return new Promise<Game[]>((resolve) => {
       let gameList: Game[] = [];
       logger.info(
         "Was search-request for game." +

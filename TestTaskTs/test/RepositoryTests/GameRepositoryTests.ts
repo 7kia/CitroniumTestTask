@@ -24,19 +24,43 @@ describe("GameDataRepository. " +
       logger.info("Удалены тестовое данные");
     }
   };
-  it("Можно найти игровую партию по различным характеристикам.", async () => {
-    let gameData: DataForCreation = new Dictionary<string, any>();
-    gameData.setValue("id", 0);
-    let gameData2: DataForCreation = new Dictionary<string, any>();
-    gameData2.setValue("creator_game_id", 2);
-    gameData2.setValue("field_size", 2);
-    const games: Game[] = await postgreSqlManager.games.find(gameData);
-    const games2: Game[] = await postgreSqlManager.games.find(gameData2);
 
-    assert.strictEqual(games.length, 1);
-    assert.strictEqual(games2.length, 1);
-    assert.strictEqual(games[0].id, gameData.getValue("id"));
-    assert.strictEqual(games2[0].id, 1);
+  const assertThrowsAsync: () => Promise<void> = async (testFunc: () => any, regExp) => {
+    let func: () => void = null;
+    try {
+      await testFunc();
+    } catch (error) {
+      func = () => {throw error};
+    } finally {
+      assert.throws(func, regExp);
+    }
+  };
+  describe("Можно найти игровую партию по различным характеристикам.", async () => {
+    it("Если партия(и) найдена(ы), то будет возвращён результат поиска.", async () => {
+      let gameData: DataForCreation = new Dictionary<string, any>();
+      gameData.setValue("id", 0);
+      let gameData2: DataForCreation = new Dictionary<string, any>();
+      gameData2.setValue("creator_game_id", 2);
+      gameData2.setValue("field_size", 2);
+      const games: Game[] = await postgreSqlManager.games.find(gameData);
+      const games2: Game[] = await postgreSqlManager.games.find(gameData2);
+
+      assert.strictEqual(games.length, 1);
+      assert.strictEqual(games2.length, 1);
+      assert.strictEqual(games[0].id, gameData.getValue("id"));
+      assert.strictEqual(games2[0].id, 1);
+    });
+    it("Если переданы некорректные параметры, то будет брошено исключение.", async () => {
+      let gameData: DataForCreation = new Dictionary<string, any>();
+      gameData.setValue("creator_game_id", -1);
+
+      assertThrowsAsync(
+        async () => {
+          const promise: Promise<Game[]> = await postgreSqlManager.games.find(gameData);
+        },
+        Error,
+      );
+    });
   });
   it("Можно создать и удалить игровую партию.", async () => {
     let gameData: DataForCreation = new Dictionary<string, any>();

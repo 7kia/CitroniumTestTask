@@ -24,7 +24,6 @@ enum Cell {
   Zero = "0",
 }
 
-
 const GAME_MESSAGES: {[id: string]: string} = {
   yourMove: "Your move",
 };
@@ -360,7 +359,7 @@ class GameManeger {
   }
 
 
-  private static getLeadingPlayerSign(game: Game): string {
+  public static getLeadingPlayerSign(game: Game): string {
     if (game.leadingPlayerId === game.creatorGameId) {
       return Cell.Cross;
     } else if (game.leadingPlayerId === game.participantId) {
@@ -447,4 +446,5 @@ export {
   PlayerRole,
   MyPosition,
   ERROR_GAME_MESSAGES,
+  Cell,
 };
