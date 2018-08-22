@@ -1,16 +1,20 @@
 /**
+ * Created by Илья on 22.08.2018.
+ */
+/**
  * Created by Илья on 11.08.2018.
  */
 import { assert } from "chai";
 import "mocha";
-import {postgreSqlManager} from "../../src/db";
-import {DataForCreation, Game} from "../../src/db/Entity/Game";
-import {logger} from "../../src/Logger";
-import {ERROR_GAME_MESSAGES, GameManeger, PlayerRole, Position} from "../../src/GameManager";
-import {User} from "../../src/db/Entity/User";
-import {GameReport} from "../../src/db/Entity/GameReport";
+import {postgreSqlManager} from "../src/db";
+import {DataForCreation, Game} from "../src/db/Entity/Game";
+import {logger} from "../src/Logger";
+import {ERROR_GAME_MESSAGES, GameManeger, PlayerRole} from "../src/GameManager";
+import {User} from "../src/db/Entity/User";
+import {GameReport} from "../src/db/Entity/GameReport";
 import * as Parallel from "async-parallel";
 import Dictionary from "typescript-collections/dist/lib/Dictionary";
+import {MyPosition} from "../src/MyPosition";
 
 describe("GameManeger. " +
   "Менеджер игры. Позволяет игрокам взаимодействовать с конкретной " +
@@ -19,7 +23,7 @@ describe("GameManeger. " +
     let func = () => {};
     try {
       await testFunc();
-    } catch (error: Error) {
+    } catch (error) {
       func = () => {throw error};
     } finally {
       assert.throws(func, regExp);
@@ -226,7 +230,7 @@ describe("GameManeger. " +
           gameData,
           async (creator: User, participant: User, game: Game): void => {
             await assertThrowsAsync(
-              async () => await GameManeger.takePlayerMove(creator.id, new Position(1, 0), game.id),
+              async () => await GameManeger.takePlayerMove(creator.id, new MyPosition(1, 0), game.id),
               ERROR_GAME_MESSAGES.thisCellFilled,
             );
             const foundGames: Game[] = await postgreSqlManager.games.find(gameData);
@@ -261,14 +265,14 @@ describe("GameManeger. " +
             participantData,
             gameData,
             async (creator: User, participant: User, game: Game): void => {
-              await GameManeger.takePlayerMove(creator.id, new Position(2, 1), game.id);
+              await GameManeger.takePlayerMove(creator.id, new MyPosition(2, 1), game.id);
               let foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
               game = foundGames[0];
               assert.deepEqual(game.field, ["???", "??X", "???"]);
               assert.deepEqual(game.winPlayerId, null);
               assert.deepEqual(game.leadingPlayerId, participant.id);
 
-              await GameManeger.takePlayerMove(participant.id, new Position(1, 1), game.id);
+              await GameManeger.takePlayerMove(participant.id, new MyPosition(1, 1), game.id);
               foundGames = await postgreSqlManager.games.find(searchGameData);
               game = foundGames[0];
               assert.deepEqual(game.field, ["???", "?0X", "???"]);
@@ -300,7 +304,7 @@ describe("GameManeger. " +
             gameData,
             async (creator: User, participant: User, game: Game): void => {
               const newField: string[] = ["XXX", gameData.getValue("field")[1], gameData.getValue("field")[2]];
-              await GameManeger.takePlayerMove(creator.id, new Position(2, 0), game.id);
+              await GameManeger.takePlayerMove(creator.id, new MyPosition(2, 0), game.id);
 
               const foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
               game = foundGames[0];
@@ -309,7 +313,7 @@ describe("GameManeger. " +
               assert.strictEqual(game.leadingPlayerId, creator.id);
 
               await assertThrowsAsync(
-                async () => GameManeger.takePlayerMove(participant.id, new Position(2, 2), game.id),
+                async () => GameManeger.takePlayerMove(participant.id, new MyPosition(2, 2), game.id),
                 ERROR_GAME_MESSAGES.gameEnd,
               );
             },
@@ -338,7 +342,7 @@ describe("GameManeger. " +
             async (creator: User, participant: User, game: Game): void => {
               assert.strictEqual(game.lastMoveTime, null);
 
-              await GameManeger.takePlayerMove(creator.id, new Position(0, 0), game.id);
+              await GameManeger.takePlayerMove(creator.id, new MyPosition(0, 0), game.id);
               const foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
               game = foundGames[0];
               assert.strictEqual(game.lastMoveTime, gameData.getValue("time"));
@@ -370,7 +374,7 @@ describe("GameManeger. " +
           gameData,
           async (creator: User, participant: User, game: Game): void => {
             await assertThrowsAsync(
-              async () => await GameManeger.takePlayerMove(participant.id, new Position(2, 0), game.id),
+              async () => await GameManeger.takePlayerMove(participant.id, new MyPosition(2, 0), game.id),
               ERROR_GAME_MESSAGES.moveAnotherPlayer,
             );
 
@@ -413,7 +417,7 @@ describe("GameManeger. " +
             await postgreSqlManager.users.create(observerData);
             const observer: User = await postgreSqlManager.users.find(observerData);
             await assertThrowsAsync(
-              async () => await GameManeger.takePlayerMove(observer.id, new Position(2, 0), game.id),
+              async () => await GameManeger.takePlayerMove(observer.id, new MyPosition(2, 0), game.id),
               ERROR_GAME_MESSAGES.tokenNotCorrespond,
             );
 
@@ -453,25 +457,25 @@ describe("GameManeger. " +
         let testData1: DataForCreation = new Dictionary<string, any>();
         testData1.setValue("leading_player_id", gameData.getValue("participant_id"));
         testData1.setValue("field", ["???", "???", "000"]);
-        testData1.setValue("position", new Position(1, 2));
+        testData1.setValue("position", new MyPosition(1, 2));
         testData1.setValue("winner_id", gameData.getValue("participant_id"));
         testData1.setValue("field_size", 3);
         let testData2: DataForCreation = new Dictionary<string, any>();
         testData2.setValue("leading_player_id", gameData.getValue("creator_game_id"));
         testData2.setValue("field", ["XXX", "???", "???"]);
-        testData2.setValue("position", new Position(2, 0));
+        testData2.setValue("position", new MyPosition(2, 0));
         testData2.setValue("winner_id", gameData.getValue("creator_game_id"));
         testData2.setValue("field_size", 3);
         let testData3: DataForCreation = new Dictionary<string, any>();
         testData3.setValue("leading_player_id", gameData.getValue("creator_game_id"));
         testData3.setValue("field", ["???", "XXX", "???"]);
-        testData3.setValue("position", new Position(2, 1));
+        testData3.setValue("position", new MyPosition(2, 1));
         testData3.setValue("winner_id", gameData.getValue("creator_game_id"));
         testData3.setValue("field_size", 3);
         let testData4: DataForCreation = new Dictionary<string, any>();
         testData4.setValue("leading_player_id", gameData.getValue("creator_game_id"));
         testData4.setValue("field", ["????", "????", "XXXX", "????"]);
-        testData4.setValue("position", new Position(2, 2));
+        testData4.setValue("position", new MyPosition(2, 2));
         testData4.setValue("winner_id", gameData.getValue("creator_game_id"));
         testData4.setValue("field_size", 4);
         const testData: DataForCreation[] = [
@@ -486,19 +490,19 @@ describe("GameManeger. " +
         let testData1: DataForCreation = new Dictionary<string, any>();
         testData1.setValue("leading_player_id", gameData.getValue("creator_game_id"));
         testData1.setValue("field", ["X??", "X??", "X??"]);
-        testData1.setValue("position", new Position(0, 1));
+        testData1.setValue("position", new MyPosition(0, 1));
         testData1.setValue("winner_id", gameData.getValue("creator_game_id"));
         testData1.setValue("field_size", 3);
         let testData2: DataForCreation = new Dictionary<string, any>();
         testData2.setValue("leading_player_id", gameData.getValue("creator_game_id"));
         testData2.setValue("field", ["?X??", "?X??", "?X??", "?X??"]);
-        testData2.setValue("position", new Position(1, 3));
+        testData2.setValue("position", new MyPosition(1, 3));
         testData2.setValue("winner_id", gameData.getValue("creator_game_id"));
         testData2.setValue("field_size", 4);
         let testData3: DataForCreation = new Dictionary<string, any>();
         testData3.setValue("leading_player_id", gameData.getValue("participant_id"));
         testData3.setValue("field", ["???0", "???0", "???0", "???0"]);
-        testData3.setValue("position", new Position(3, 2));
+        testData3.setValue("position", new MyPosition(3, 2));
         testData3.setValue("winner_id", gameData.getValue("participant_id"));
         testData3.setValue("field_size", 4);
         const testData: DataForCreation[] = [
@@ -512,7 +516,7 @@ describe("GameManeger. " +
         let testData1: DataForCreation = new Dictionary<string, any>();
         testData1.setValue("leading_player_id", gameData.getValue("creator_game_id"));
         testData1.setValue("field", ["X??", "?X?", "??X"]);
-        testData1.setValue("position", new Position(1, 1));
+        testData1.setValue("position", new MyPosition(1, 1));
         testData1.setValue("winner_id", gameData.getValue("creator_game_id"));
         testData1.setValue("field_size", 3);
         let testData2: DataForCreation = new Dictionary<string, any>();
@@ -526,7 +530,7 @@ describe("GameManeger. " +
             "???0",
           ],
         );
-        testData2.setValue("position", new Position(1, 1));
+        testData2.setValue("position", new MyPosition(1, 1));
         testData2.setValue("winner_id", gameData.getValue("participant_id"));
         testData2.setValue("field_size", 4);
         let testData3: DataForCreation = new Dictionary<string, any>();
@@ -540,7 +544,7 @@ describe("GameManeger. " +
             "0???",
           ],
         );
-        testData3.setValue("position", new Position(1, 2));
+        testData3.setValue("position", new MyPosition(1, 2));
         testData3.setValue("winner_id", gameData.getValue("participant_id"));
         testData3.setValue("field_size", 4);
         let testData4: DataForCreation = new Dictionary<string, any>();
@@ -554,7 +558,7 @@ describe("GameManeger. " +
             "X???",
           ],
         );
-        testData4.setValue("position", new Position(1, 2));
+        testData4.setValue("position", new MyPosition(1, 2));
         testData4.setValue("winner_id", gameData.getValue("creator_game_id"));
         testData4.setValue("field_size", 4);
 
@@ -571,7 +575,7 @@ describe("GameManeger. " +
       let testData1: DataForCreation = new Dictionary<string, any>();
       testData1.setValue("leading_player_id", gameData.getValue("participant_id"));
       testData1.setValue("field", ["???", "?0?", "?XX"]);
-      testData1.setValue("position", new Position(1, 1));
+      testData1.setValue("position", new MyPosition(1, 1));
       testData1.setValue("winner_id", GameManeger.NO_WINNER);
       testData1.setValue("field_size", 3);
       let testData2: DataForCreation = new Dictionary<string, any>();
@@ -584,7 +588,7 @@ describe("GameManeger. " +
           "????",
         ],
       );
-      testData2.setValue("position", new Position(2, 1));
+      testData2.setValue("position", new MyPosition(2, 1));
       testData2.setValue("winner_id", GameManeger.NO_WINNER);
       testData2.setValue("field_size", 4);
       let testData3: DataForCreation = new Dictionary<string, any>();
@@ -597,7 +601,7 @@ describe("GameManeger. " +
           "?X??",
         ],
       );
-      testData3.setValue("position", new Position(2, 2));
+      testData3.setValue("position", new MyPosition(2, 2));
       testData3.setValue("winner_id", GameManeger.NO_WINNER);
       testData3.setValue("field_size", 4);
       const testData: DataForCreation[] = [
@@ -664,11 +668,11 @@ describe("GameManeger. " +
             await GameManeger.runGame(createdGameId);
           },
           async () => {
-            await GameManeger.takePlayerMove(creator.id, new Position(0, 0), createdGameId);
-            await GameManeger.takePlayerMove(participant.id, new Position(1, 0), createdGameId);
-            await GameManeger.takePlayerMove(creator.id, new Position(1, 1), createdGameId);
-            await GameManeger.takePlayerMove(participant.id, new Position(0, 1), createdGameId);
-            await GameManeger.takePlayerMove(creator.id, new Position(2, 2), createdGameId);
+            await GameManeger.takePlayerMove(creator.id, new MyPosition(0, 0), createdGameId);
+            await GameManeger.takePlayerMove(participant.id, new MyPosition(1, 0), createdGameId);
+            await GameManeger.takePlayerMove(creator.id, new MyPosition(1, 1), createdGameId);
+            await GameManeger.takePlayerMove(participant.id, new MyPosition(0, 1), createdGameId);
+            await GameManeger.takePlayerMove(creator.id, new MyPosition(2, 2), createdGameId);
           },
         ],
       );

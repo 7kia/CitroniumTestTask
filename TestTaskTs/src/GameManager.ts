@@ -9,10 +9,8 @@ import {DataForCreation, Helpers} from "./Helpers";
 import * as crypto from "crypto";
 import * as moment from "moment";
 import * as Parallel from "async-parallel";
-import * as now from "performance-now";
 import Dictionary from "typescript-collections/dist/lib/Dictionary";
-import { suite, test } from "mocha-typescript";
-import {Position} from "Position";
+import {MyPosition} from "./MyPosition";
 
 enum PlayerRole {
   Creator = 1,
@@ -94,9 +92,9 @@ class GameManeger {
       const game: Game = games[0];
       if (player.accessToken && (player.accessToken === game.accessToken)) {
         if (player.id === game.creatorGameId) {
-          return PlayerRole.Creator;
+          resolve(PlayerRole.Creator);
         } else if (player.id === game.participantId) {
-          return PlayerRole.Participant;
+          resolve(PlayerRole.Participant);
         }
       }
       resolve(PlayerRole.Observer);
@@ -107,7 +105,7 @@ class GameManeger {
     playerId: number,
     gameId: number,
   ): Promise<boolean> {
-    return new Promise<boolean>(async (resolve) => {
+    return new Promise<boolean>(async (resolve, reject) => {
       let searchGameData: DataForCreation = new Dictionary<string, any>();
       searchGameData.setValue("id", gameId);
       let searchPlayerData: DataForCreation = new Dictionary<string, any>();
@@ -119,7 +117,7 @@ class GameManeger {
       const game: Game = games[0];
       if (role === PlayerRole.Observer) {
         if (!player.accessToken && !game.participantId) {
-          return true;
+          resolve(true);
         }
       }
       resolve(false);
@@ -150,7 +148,7 @@ class GameManeger {
       await postgreSqlManager.games.update(game.id, newGameData);
       await postgreSqlManager.users.update(user.id, newUserData);
     }
-    return new Promise<boolean>((resolve) => {
+    return new Promise<boolean>((resolve, reject) => {
       resolve(willParticipant);
     });
   }
@@ -162,7 +160,7 @@ class GameManeger {
   }
 
   public static async getGameTime(gameId: number): Promise<number> {
-    return new Promise<number>(async (resolve) => {
+    return new Promise<number>(async (resolve, reject) => {
       let gameSearchData: DataForCreation = new Dictionary<string, any>();
       gameSearchData.setValue("id", gameId);
 
@@ -174,7 +172,7 @@ class GameManeger {
   }
   public static async takePlayerMove(
     playerId: number,
-    position: Position,
+    position: MyPosition,
     gameId: number,
   ): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
@@ -240,13 +238,13 @@ class GameManeger {
 
   public static findWinner(
     game: Game,
-    position: Position,
+    position: MyPosition,
   ): number {
     const playerSign: string = GameManeger.getLeadingPlayerSign(game);
-    const firstDiagonalFunc: (x: number, pos: Position) => number = (x: number, pos: Position) => {
+    const firstDiagonalFunc: (x: number, pos: MyPosition) => number = (x: number, pos: MyPosition) => {
       return (x - pos.x) + pos.y;
     };
-    const secondDiagonalFunc: (x: number, pos: Position) => number = (x: number, pos: Position) => {
+    const secondDiagonalFunc: (x: number, pos: MyPosition) => number = (x: number, pos: MyPosition) => {
       return pos.y - (x - pos.x);
     };
     if (GameManeger.filledHorizontal(game.field, playerSign, position)
@@ -262,7 +260,7 @@ class GameManeger {
     creatorId: number,
     fieldSize: number,
   ): Promise<number> {
-    return new Promise<number>(async (resolve) => {
+    return new Promise<number>(async (resolve, reject) => {
       const accessToken: string = GameManeger.generateAccessToken();
       let successCreation: boolean = false;
       while (!successCreation) {
@@ -289,7 +287,7 @@ class GameManeger {
     });
   }
   public static async waitParticipant(gameId: number): Promise<boolean> {
-    return new Promise<boolean>(async (resolve) => {
+    return new Promise<boolean>(async (resolve, reject) => {
       let gameSearchData: DataForCreation = new Dictionary<string, any>();
       gameSearchData.setValue("id", gameId);
 
@@ -319,7 +317,7 @@ class GameManeger {
   public static async runGame(createdGameId: number): Promise<void> {
     let searchGameData: DataForCreation = new Dictionary<string, any>();
     searchGameData.setValue("id", createdGameId);
-    const startTime: number = now();
+    const startTime: number = Date.now();
 
     let game: Game = null;
     let gameEnd: boolean = false;
@@ -333,7 +331,7 @@ class GameManeger {
         GameManeger.sendGameReport(game.participantId, game.id);
         gameEnd = true;
       } else {
-        game.time = now() - startTime;
+        game.time = Date.now() - startTime;
 
         let newGameData: DataForCreation = new Dictionary<string, any>();
         newGameData.setValue("time", game.time);
@@ -381,7 +379,7 @@ class GameManeger {
   private static filledHorizontal(
     field: string[],
     playerSign: string,
-    position: Position,
+    position: MyPosition,
   ): boolean {
     let filledHorizontal: boolean = true;
     for (let x: number = 0; x < field.length; x++) {
@@ -396,7 +394,7 @@ class GameManeger {
   private static filledVertical(
     field: string[],
     playerSign: string,
-    position: Position,
+    position: MyPosition,
   ): boolean {
     let filledHorizontal: boolean = true;
     for (let y: number = 0; y < field.length; y++) {
@@ -411,8 +409,8 @@ class GameManeger {
   private static filledDiagonal(
     field: string[],
     playerSign: string,
-    position: Position,
-    diagonalFunction: (x: number, position: Position) => number,
+    position: MyPosition,
+    diagonalFunction: (x: number, position: MyPosition) => number,
   ): boolean {
     let filledDiagonal: boolean = true;
     for (let x: number = 0; x < field.length; x++) {
@@ -454,6 +452,6 @@ class GameManeger {
 export {
   GameManeger,
   PlayerRole,
-  Position,
+  MyPosition,
   ERROR_GAME_MESSAGES,
 };
