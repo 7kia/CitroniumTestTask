@@ -1,0 +1,34 @@
+.html, body {
+    background: white;
+    margin: 0px;
+}
+
+.login_form 
+{
+    width: 300px;
+
+    margin: 50px auto 50px auto;
+    text-align: center;
+}
+
+.login_form .text_boxs
+{
+    margin-left: auto;
+    margin-right: auto;
+    padding: 10px 0px 10px 0px;
+}
+
+.login_form .text_boxs .text_box
+{
+    width: 280px;
+    height: 38px;
+    padding: 5px 10px 5px;
+
+    background-clip: padding-box;
+    margin: auto;
+}
+
+.buttons
+{
+    margin: 16px auto;
+}
