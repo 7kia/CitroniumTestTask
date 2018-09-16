@@ -15,7 +15,8 @@
         "typeRoots" : ["./typings", "node_modules/@types"],
         "noImplicitAny": false,
         "experimentalDecorators": true,
-        "emitDecoratorMetadata": true
+        "emitDecoratorMetadata": true,
+        "allowJs": true,
     },
     "include": [
         "../src/**/*",

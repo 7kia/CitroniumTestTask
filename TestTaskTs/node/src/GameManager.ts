@@ -1,7 +1,7 @@
 /**
  * Created by Илья on 11.08.2018.
  */
-import {Game} from "./db/Entity/Game";
+import {Game, GameState} from "./db/Entity/Game";
 import {User} from "./db/Entity/User";
 import {postgreSqlManager} from "./db";
 import {logger} from "./Logger";
@@ -15,13 +15,13 @@ import {MyPosition} from "./MyPosition";
 enum PlayerRole {
   Creator = 1,
   Participant,
-  Observer,
+  Observer
 }
 
 enum Cell {
   Empty = "?",
   Cross = "X",
-  Zero = "0",
+  Zero = "0"
 }
 
 const GAME_MESSAGES: {[id: string]: string} = {
@@ -38,7 +38,7 @@ const ERROR_GAME_MESSAGES: {[id: string]: string} = {
   thisCellFilled: "Player move to filled cell.",
 };
 
-class GameManeger {
+class GameManager {
   public static get NO_WINNER(): number {
     return -1;
   }
@@ -109,7 +109,7 @@ class GameManeger {
     searchPlayerData.setValue("id", playerId);
 
     const player: User = await postgreSqlManager.users.find(searchPlayerData);
-    const role: PlayerRole = await GameManeger.getRoleToGame(playerId, gameId);
+    const role: PlayerRole = await GameManager.getRoleToGame(playerId, gameId);
     const games: Game[] = await postgreSqlManager.games.find(searchGameData);
     const game: Game = games[0];
 
@@ -122,7 +122,7 @@ class GameManeger {
   }
 
   public static async connectPlayer(playerId: number, gameId: number): Promise<boolean> {
-    const willParticipant: boolean = await GameManeger.canStandParticipant(playerId, gameId);
+    const willParticipant: boolean = await GameManager.canStandParticipant(playerId, gameId);
     let gameSearchData: DataForCreation = new Dictionary<string, any>();
     gameSearchData.setValue("id", gameId);
     let userSearchData: DataForCreation = new Dictionary<string, any>();
@@ -177,27 +177,28 @@ class GameManeger {
       let foundGames: Game[] = await postgreSqlManager.games.find(gameSearchData);
       let game: Game = foundGames[0];
 
-
       const correspondToken: boolean = (player.accessToken === game.accessToken);
       const thisPlayerMove: boolean = (player.id === game.leadingPlayerId);
-      const existWinner: boolean = (game.winPlayerId !== null);
-      if (correspondToken && thisPlayerMove && !existWinner) {
+      const endGame: boolean = (game.gameState !== GameState.NoWinner);
+      if (correspondToken && thisPlayerMove && !endGame) {
         const selectCell: string = game.field[position.y][position.x];
         if (selectCell === Cell.Empty) {
-          const playerSign: string = GameManeger.getLeadingPlayerSign(game);
+          const playerSign: string = GameManager.getLeadingPlayerSign(game);
 
           let newGameData: DataForCreation = new Dictionary<string, any>();
           game.field[position.y] = Helpers.replaceAt(game.field[position.y], position.x, playerSign);
           newGameData.setValue("field", game.field);
           newGameData.setValue("last_move_time", game.time);
 
-          const winnerId: number = GameManeger.findWinner(game, position);
-          if (winnerId !== GameManeger.NO_WINNER) {
-            newGameData.setValue("win_player_id", winnerId);
+          const winnerId: number = GameManager.findWinner(game, position);
+          if (winnerId !== GameManager.NO_WINNER) {
+            GameManager.signWinner(newGameData, winnerId, game.creatorGameId);
+          } else if (GameManager.allCellFilled(game)) {
+            newGameData.setValue("game_state", GameState.Draw);
           } else {
-            GameManeger.swapMoveLaw(game);
+            GameManager.swapMoveLaw(game);
             newGameData.setValue("leading_player_id", game.leadingPlayerId);
-            await GameManeger.sendMessage(game.leadingPlayerId, GAME_MESSAGES.yourMove);
+            await GameManager.sendMessage(game.leadingPlayerId, GAME_MESSAGES.yourMove);
           }
           await postgreSqlManager.games.update(game.id, newGameData);
         } else {
@@ -211,56 +212,80 @@ class GameManeger {
         resolve(true);
       }
 
-      let errorMessage: string = "";
-      if (!correspondToken) {
-        errorMessage += ERROR_GAME_MESSAGES.tokenNotCorrespond;
-      } else {
-        if (!thisPlayerMove) {
-          errorMessage += ERROR_GAME_MESSAGES.moveAnotherPlayer;
-        }
-        if (existWinner) {
-          errorMessage += ERROR_GAME_MESSAGES.gameEnd;
-        }
-      }
-
+      let errorMessage: string = GameManager.setErrorMessage(
+        correspondToken,
+        thisPlayerMove,
+        endGame
+      );
       logger.error(errorMessage);
       reject(new Error(errorMessage));
     });
+  }
+
+  private static setErrorMessage(
+    correspondToken: boolean,
+    thisPlayerMove: boolean,
+    endGame: boolean
+  ): string {
+    let errorMessage: string = "";
+    if (!correspondToken) {
+      errorMessage += ERROR_GAME_MESSAGES.tokenNotCorrespond;
+    } else {
+      if (!thisPlayerMove) {
+        errorMessage += ERROR_GAME_MESSAGES.moveAnotherPlayer;
+      }
+      if (endGame) {
+        errorMessage += ERROR_GAME_MESSAGES.gameEnd;
+      }
+    }
+    return errorMessage;
+  }
+  private static signWinner(
+    newGameData: DataForCreation,
+    winnerId: number,
+    creatorGameId: number
+  ) {
+    newGameData.setValue("win_player_id", winnerId);
+    if (winnerId === creatorGameId) {
+      newGameData.setValue("game_state", GameState.CreatorWin);
+    } else {
+      newGameData.setValue("game_state", GameState.ParticipantWin);
+    }
   }
 
   public static findWinner(
     game: Game,
     position: MyPosition,
   ): number {
-    const playerSign: string = GameManeger.getLeadingPlayerSign(game);
+    const playerSign: string = GameManager.getLeadingPlayerSign(game);
     const firstDiagonalFunc: (x: number, pos: MyPosition) => number = (x: number, pos: MyPosition) => {
       return (x - pos.x) + pos.y;
     };
     const secondDiagonalFunc: (x: number, pos: MyPosition) => number = (x: number, pos: MyPosition) => {
       return pos.y - (x - pos.x);
     };
-    if (GameManeger.filledHorizontal(game.field, playerSign, position)
-      || GameManeger.filledVertical(game.field, playerSign, position)
-      || GameManeger.filledDiagonal(game.field, playerSign, position, firstDiagonalFunc)
-      || GameManeger.filledDiagonal(game.field, playerSign, position, secondDiagonalFunc)
+    if (GameManager.filledHorizontal(game.field, playerSign, position)
+      || GameManager.filledVertical(game.field, playerSign, position)
+      || GameManager.filledDiagonal(game.field, playerSign, position, firstDiagonalFunc)
+      || GameManager.filledDiagonal(game.field, playerSign, position, secondDiagonalFunc)
     ) {
       return game.leadingPlayerId;
     }
-    return GameManeger.NO_WINNER;
+    return GameManager.NO_WINNER;
   }
   public static async createGameAndConnectCreator(
     creatorId: number,
     fieldSize: number,
   ): Promise<number> {
     return new Promise<number>(async (resolve, reject) => {
-      const accessToken: string = GameManeger.generateAccessToken();
+      const accessToken: string = GameManager.generateAccessToken();
       let successCreation: boolean = false;
       while (!successCreation) {
         try {
           let newGameData: DataForCreation = new Dictionary<string, any>();
           newGameData.setValue("access_token", accessToken);
           newGameData.setValue("leading_player_id", creatorId);
-          newGameData.setValue("field", GameManeger.generateField(fieldSize));
+          newGameData.setValue("field", GameManager.generateField(fieldSize));
 
           await postgreSqlManager.games.create(newGameData);
           successCreation = true;
@@ -274,7 +299,7 @@ class GameManeger {
       const createdGames: Game[] = await postgreSqlManager.games.find(searchGameData);
       let createdGame: Game = createdGames[0];
 
-      await GameManeger.connectPlayer(creatorId, createdGame.id);
+      await GameManager.connectPlayer(creatorId, createdGame.id);
       resolve(createdGame.id);
     });
   }
@@ -319,8 +344,8 @@ class GameManeger {
       game = foundGames[0];
 
       if (game.winPlayerId) {
-        GameManeger.sendGameReport(game.creatorGameId, game.id);
-        GameManeger.sendGameReport(game.participantId, game.id);
+        GameManager.sendGameReport(game.creatorGameId, game.id);
+        GameManager.sendGameReport(game.participantId, game.id);
         gameEnd = true;
       } else {
         game.time = Date.now() - startTime;
@@ -329,7 +354,7 @@ class GameManeger {
         newGameData.setValue("time", game.time);
         await postgreSqlManager.games.update(game.id, newGameData);
 
-        if ((game.time - game.lastMoveTime) < GameManeger.MAX_INACTIVE_TIME) {
+        if ((game.time - game.lastMoveTime) < GameManager.MAX_INACTIVE_TIME) {
           Parallel.sleep(500);
           continue;
         } else {
@@ -338,11 +363,11 @@ class GameManeger {
       }
     }
 
-    await GameManeger.unconnectPlayer(game.creatorGameId);
-    await GameManeger.unconnectPlayer(game.participantId);
+    await GameManager.unconnectPlayer(game.creatorGameId);
+    await GameManager.unconnectPlayer(game.participantId);
     if (!game.winPlayerId && gameEnd) {
-      await GameManeger.redirectToStartScreen(game.creatorGameId);
-      await GameManeger.redirectToStartScreen(game.participantId);
+      await GameManager.redirectToStartScreen(game.creatorGameId);
+      await GameManager.redirectToStartScreen(game.participantId);
       await postgreSqlManager.games.deleteGame(searchGameData);
     }
   }
@@ -357,7 +382,6 @@ class GameManeger {
       + " for player with id=" + playerId + ".",
     );
   }
-
 
   public static getLeadingPlayerSign(game: Game): string {
     if (game.leadingPlayerId === game.creatorGameId) {
@@ -439,10 +463,20 @@ class GameManeger {
   private static generateAccessToken(): string {
     return crypto.randomBytes(ACCESS_TOKEN_LENGTH).toString("hex");
   }
+  private static allCellFilled(game: Game) {
+    for (const row of game.field) {
+      for (const cell of row) {
+        if (cell === Cell.Empty) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
 }
 
 export {
-  GameManeger,
+  GameManager,
   PlayerRole,
   MyPosition,
   ERROR_GAME_MESSAGES,

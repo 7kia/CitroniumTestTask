@@ -7,18 +7,16 @@ import {postgreSqlManager} from "../../src/db";
 import {User} from "../../src/db/Entity/User";
 import * as pgPromise from "pg-promise";
 import QueryResultError = pgPromise.errors.QueryResultError;
-import * as Collections from "typescript-collections";
 import {DataForCreation, WhatUpdate} from "../../src/Helpers";
 import Dictionary from "typescript-collections/dist/lib/Dictionary";
-
 
 describe("UserRepository. " +
     "Позволяет брать и редактировать данные пользователей.", () => {
   const deleteUserIfExist = async (userData: DataForCreation ) => {
     try {
-      const foundUser: User = await postgreSqlManager.users.find( userData );
+      const foundUser: User = await postgreSqlManager.users.find(userData);
       if (foundUser) {
-        await postgreSqlManager.users.deleteUser( userData );
+        await postgreSqlManager.users.deleteUser(userData);
       }
     } catch (error) {
       console.log("Удалены тестовое данные");

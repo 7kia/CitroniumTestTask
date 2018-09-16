@@ -4,6 +4,13 @@
 import {GameReport} from "./GameReport";
 import {DataForCreation} from "../../Helpers";
 
+enum GameState {
+  NoWinner = 0,
+  CreatorWin,
+  ParticipantWin,
+  Draw
+}
+
 class Game {
   public id: number;
   public creatorGameId: number;
@@ -15,6 +22,7 @@ class Game {
   public lastMoveTime: number;
   public leadingPlayerId: number;
   public winPlayerId: number;
+  public gameState: GameState;
   constructor(data: DataForCreation) {
     this.id = data.getValue("id");
     this.creatorGameId = data.getValue("creator_game_id");
@@ -26,15 +34,18 @@ class Game {
     this.lastMoveTime = data.getValue("last_move_time");
     this.leadingPlayerId = data.getValue("leading_player_id");
     this.winPlayerId = data.getValue("win_player_id");
+    this.gameState = data.getValue("game_state");
   }
 
   public getReport(): GameReport {
     return new GameReport(this);
   }
+
 }
 
 export {
   Game,
-  GameReport
+  GameReport,
+  GameState
 };
 

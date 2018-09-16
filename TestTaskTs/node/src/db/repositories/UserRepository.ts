@@ -89,5 +89,6 @@ class UserRepository extends Repository {
 }
 
 export {
-    UserRepository,
+  UserRepository,
+  DataForCreation
 };

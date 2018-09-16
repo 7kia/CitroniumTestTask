@@ -1,13 +1,18 @@
-class UserData {
-  public login: string;
-  public password: string;
+interface IUserData {
+  login: string;
+  password: string;
+  submitted: boolean;
+  errorMessage: string;
 }
 
-const createEmptyLogin = (): UserData => {
-  return new UserData();
-};
+const createEmptyLogin = (): IUserData => ({
+  login: "",
+  password: "",
+  submitted: false,
+  errorMessage: ""
+});
 
 export {
-  UserData,
+  IUserData,
   createEmptyLogin
 };

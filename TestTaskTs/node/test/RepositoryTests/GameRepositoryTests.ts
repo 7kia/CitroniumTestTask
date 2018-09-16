@@ -21,7 +21,7 @@ describe("GameDataRepository. " +
         await postgreSqlManager.games.deleteGame(gameData);
       }
     } catch (error) {
-      logger.info("Удалены тестовое данные");
+      logger.info("Удалены тестовые данные");
     }
   };
 

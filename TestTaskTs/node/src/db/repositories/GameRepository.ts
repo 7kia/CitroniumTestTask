@@ -4,7 +4,7 @@
 import {IDatabase, IMain} from "pg-promise";
 
 import {Repository} from "./Repository";
-import {DataForCreation, Helpers} from "../../Helpers";
+import {DataForCreation} from "../../Helpers";
 import {logger} from "../../Logger";
 import * as pgPromise from "pg-promise";
 import QueryResultError = pgPromise.errors.QueryResultError;
@@ -33,6 +33,7 @@ class GameRepository extends Repository {
         foundData.setValue("last_move_time", object.last_move_time);
         foundData.setValue("leading_player_id", object.leading_player_id);
         foundData.setValue("win_player_id", object.win_player_id);
+        foundData.setValue("game_state", object.game_state);
 
         properties.push(foundData);
       }
@@ -103,4 +104,5 @@ class GameRepository extends Repository {
 
 export {
   GameRepository,
+  DataForCreation
 };
