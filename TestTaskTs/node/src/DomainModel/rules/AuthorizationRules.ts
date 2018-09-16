@@ -7,7 +7,7 @@ import {postgreSqlManager} from "../../db/index";
 import {User} from "../../db/Entity/User";
 
 export class AuthorizationRules {
-  public static async canSignIn(username: string, password: string): boolean {
+  public static async canSignIn(username: string, password: string): Promise<boolean> {
     let foundUser: User = null;
     try {
       const userData: DataForCreation = new Dictionary<string, {}>();
@@ -31,7 +31,7 @@ export class AuthorizationRules {
     password: string,
     repeatPassword: string,
     username: string
-  ): boolean {
+  ): Promise<boolean> {
     if (await AuthorizationRules.existUser("email", email)) {
       throw new Error("User with the email exist");
     }
@@ -44,12 +44,12 @@ export class AuthorizationRules {
     return true;
   }
 
-  private static async existUser(propertyName: string, value: string): boolean {
+  private static async existUser(propertyName: string, value: string): Promise<boolean> {
     try {
       const userData: DataForCreation = new Dictionary<string, {}>();
       userData.setValue(propertyName, value);
 
-      foundUser = await postgreSqlManager.users.find(userData);
+      const foundUser: User = await postgreSqlManager.users.find(userData);
       if (foundUser) {
         return true;
       }

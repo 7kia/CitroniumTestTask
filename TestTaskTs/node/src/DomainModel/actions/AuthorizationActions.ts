@@ -31,4 +31,5 @@ export class AuthorizationActions {
       AuthorizationStrategies.sendAuthorizeError(res, error);
     }
   }
+
 }
