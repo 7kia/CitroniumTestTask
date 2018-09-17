@@ -22,6 +22,17 @@ describe("UserRepository. " +
       console.log("Удалены тестовое данные");
     }
   };
+  const assertThrowsAsync: (testFunc: () => any, regExp: any) => Promise<void>
+    = async (testFunc: () => any, regExp: any) => {
+    let func: () => void = null;
+    try {
+      await testFunc();
+    } catch (error) {
+      func = () => {throw error};
+    } finally {
+      assert.throws(func, regExp);
+    }
+  };
   it("Можно найти пользователя по различным характеристикам.", async () => {
     let userData1: DataForCreation = new Dictionary<string, any>();
     userData1.setValue("id", 0);
@@ -50,13 +61,12 @@ describe("UserRepository. " +
     assert.strictEqual(foundUser.password, userData.getValue("password"));
 
     await postgreSqlManager.users.deleteUser( userData );
-    // TODO : не ловит исключение
-    // assert.throws(
-    //   async () => {
-    //     await postgreSqlManager.users.find( userData );
-    //   },
-    //   QueryResultError,
-    // );
+    assertThrowsAsync(
+      async () => {
+        await postgreSqlManager.users.find( userData );
+      },
+      Error
+    );
   });
   it("Можно обновить данные пользователя.", async () => {
     let oldData: DataForCreation = new Dictionary<string, any>();

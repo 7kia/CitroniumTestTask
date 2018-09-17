@@ -201,7 +201,7 @@ class GameManager {
     });
   }
   public static async getGameTime(gameId: number): Promise<number> {
-    return new Promise<User>(async (resolve, reject) => {
+    return new Promise<number>(async (resolve, reject) => {
       try {
         let gameSearchData: DataForCreation = new Dictionary<string, any>();
         gameSearchData.setValue("id", gameId);

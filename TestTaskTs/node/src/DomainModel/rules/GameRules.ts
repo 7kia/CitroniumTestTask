@@ -34,11 +34,15 @@ export class GameRules {
 
   public static async canConnectToGame(userId: number, gameId: number): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
-      const canStandParticipant: boolean =  await GameManager.canStandParticipant(userId, gameId);
-      if (!canStandParticipant) {
-        reject(new Error("Player not can connect"));
+      try {
+        const canStandParticipant: boolean =  await GameManager.canStandParticipant(userId, gameId);
+        if (!canStandParticipant) {
+          reject(new Error("Player not can connect"));
+        }
+        resolve(canStandParticipant);
+      } catch (error) {
+        reject(error);
       }
-      resolve(canStandParticipant);
     });
   }
 

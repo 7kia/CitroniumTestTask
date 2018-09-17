@@ -62,7 +62,6 @@ export class GameActions {
         GameStrategies.sendErrorMessage(res, error);
       }
     });
-
   }
 
 }

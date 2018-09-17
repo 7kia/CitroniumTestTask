@@ -29,7 +29,6 @@ export class GameStrategies {
         reject(error);
       }
     });
-
   }
   public static async findGames(req: Request, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
@@ -113,7 +112,7 @@ export class GameStrategies {
     return new Promise<void>(async (resolve, reject) => {
       try {
         const creator: User = await GameManager.findUser(game.creatorGameId);
-        const participantName: string = null;
+        let participantName: string = null;
         if (game.participantId) {
           try {
             const participant: User = await GameManager.findUser(game.participantId);
