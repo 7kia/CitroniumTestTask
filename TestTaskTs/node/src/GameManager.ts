@@ -11,6 +11,7 @@ import * as moment from "moment";
 import * as Parallel from "async-parallel";
 import Dictionary from "typescript-collections/dist/lib/Dictionary";
 import {MyPosition} from "./MyPosition";
+import {Repository} from "./db/repositories/Repository";
 
 enum PlayerRole {
   Creator = 1,
@@ -154,13 +155,64 @@ class GameManager {
     await postgreSqlManager.users.update(playerId, userData);
   }
 
-  public static async getGameTime(gameId: number): Promise<number> {
-    let gameSearchData: DataForCreation = new Dictionary<string, any>();
-    gameSearchData.setValue("id", gameId);
+  public static async getIncompleteGame(userId: number): Promise<number> {
+    return new Promise<number>(async (resolve, reject) => {
+      try {
+        let user: User = await GameManager.findUser(userId);
 
-    const foundGames: Game[] = await postgreSqlManager.games.find(gameSearchData);
-    const game: Game = foundGames[0];
-    return Promise.resolve(game.time);
+        console.log("user.accessToken " + user.accessToken);
+        if (user.accessToken) {
+          const gameData: DataForCreation = new Dictionary<string, any>();
+          gameData.setValue("access_token", user.accessToken);
+
+          const incompleteGame: Game = await GameManager.findGame(gameData);
+          console.log("incompleteGame.id " + incompleteGame.id);
+          resolve(incompleteGame.id);
+        } else {
+          resolve(null);
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+  public static async findGame(gameData: DataForCreation): Promise<Game> {
+    return new Promise<Game>(async (resolve, reject) => {
+      try {
+        const foundGames: Game[] = await postgreSqlManager.games.find(gameData);
+        resolve(foundGames[0]);
+      } catch (error) {
+        reject(new Error("Games with " + Repository.generateCriteriaString(gameData) + " not found"));
+      }
+    });
+  }
+  public static async findUser(userId: number): Promise<User> {
+    return new Promise<User>(async (resolve, reject) => {
+      try {
+        const userData: DataForCreation = new Dictionary<string, any>();
+        userData.setValue("id", userId);
+
+        const user: User = await postgreSqlManager.users.find(userData);
+        resolve(user);
+      } catch (error) {
+        reject(new Error("User with id = " + userId + " not found"));
+      }
+      resolve(null);
+    });
+  }
+  public static async getGameTime(gameId: number): Promise<number> {
+    return new Promise<User>(async (resolve, reject) => {
+      try {
+        let gameSearchData: DataForCreation = new Dictionary<string, any>();
+        gameSearchData.setValue("id", gameId);
+
+        const foundGames: Game[] = await postgreSqlManager.games.find(gameSearchData);
+        const game: Game = foundGames[0];
+        resolve(game.time);
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
   public static async takePlayerMove(
     playerId: number,
