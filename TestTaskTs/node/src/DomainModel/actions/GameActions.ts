@@ -5,6 +5,7 @@ import {Request, Response} from "express";
 import {GameRules} from "../rules/GameRules";
 import {GameStrategies} from "../strategies/GameStrategies";
 import {GameManager} from "../../GameManager";
+import {MyPosition} from "../../MyPosition";
 
 export class GameActions {
   public static async createGame(req: Request, res: Response): Promise<void> {
@@ -18,6 +19,7 @@ export class GameActions {
       } catch (error) {
         GameStrategies.sendErrorMessage(res, error);
       }
+      resolve()
     });
 
   }
@@ -33,6 +35,7 @@ export class GameActions {
       } catch (error) {
         GameStrategies.sendErrorMessage(res, error);
       }
+      resolve();
     });
   }
   public static async connectToGame(req: Request, res: Response): Promise<void> {
@@ -46,6 +49,7 @@ export class GameActions {
       } catch (error) {
         GameStrategies.sendErrorMessage(res, error);
       }
+      resolve();
     });
   }
   public static async getUserIncompleteGame(req: Request, res: Response): Promise<void> {
@@ -61,7 +65,54 @@ export class GameActions {
       } catch (error) {
         GameStrategies.sendErrorMessage(res, error);
       }
+      resolve();
     });
   }
 
+  public static async setLoser(req: Request, res: Response): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+      const userId: number = req.query.userId;
+      const gameId: number = req.query.gameId;
+      try {
+        if (await GameRules.canStandLoser(userId, gameId)) {
+          await GameStrategies.setLoser(userId, gameId, res);
+        }
+      } catch (error) {
+        GameStrategies.sendErrorMessage(res, error);
+      }
+      resolve();
+    });
+  }
+  public static async getGameReport(req: Request, res: Response): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+      const gameId: number = req.query.gameId;
+      try {
+        if (await GameRules.existGame(gameId)) {
+          await GameStrategies.returnGameReport(gameId, res);
+        }
+      } catch (error) {
+        GameStrategies.sendErrorMessage(res, error);
+      }
+      resolve();
+    });
+  }
+
+  public static async takePlayerMove(req: Request, res: Response): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+      const row: number = req.query.row;
+      const column: number = req.query.column;
+      const userId: number = req.query.userId;
+      const gameId: number = req.query.gameId;
+      try {
+        if (await GameRules.canTakeMove(userId, gameId)) {
+          if (await GameRules.positionNotOutFiled(column, row, gameId)) {
+            await GameStrategies.takePlayerMove(new MyPosition(column, row), userId, gameId, res);
+          }
+        }
+      } catch (error) {
+        GameStrategies.sendErrorMessage(res, error);
+      }
+      resolve();
+    });
+  }
 }

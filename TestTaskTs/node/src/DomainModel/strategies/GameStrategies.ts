@@ -8,6 +8,7 @@ import {GameManager} from "../../GameManager";
 import {postgreSqlManager} from "../../db/index";
 import {Game} from "../../db/Entity/Game";
 import {User} from "../../db/Entity/User";
+import {MyPosition} from "../../MyPosition";
 
 export class GameStrategies {
   public static async createGame(req: Request, res: Response): Promise<void> {
@@ -15,19 +16,17 @@ export class GameStrategies {
       try {
         const userId: number = req.query.userId;
         const size: number = req.query.size;
-
         const gameId: number = await GameManager.createGameAndConnectCreator(userId, size);
 
-        const gameData: DataForCreation = new Dictionary<string, any>();
-        gameData.setValue("id", gameId);
-
-        const games: Game[] = await postgreSqlManager.games.find(gameData);
-        const createdGame: Game = games[0];
-
+        const createdGame: Game = await GameManager.findGame(gameId);
         res.status(200).json({gameId: gameId, accessToken: createdGame.accessToken});
+
+        await GameManager.waitParticipant(createdGame.id);
+        await GameManager.runGame(createdGame.id);
       } catch (error) {
         reject(error);
       }
+      resolve();
     });
   }
   public static async findGames(req: Request, res: Response): Promise<void> {
@@ -50,10 +49,11 @@ export class GameStrategies {
       } catch (error) {
         reject(error);
       }
+      resolve();
     });
   }
   public static sendErrorMessage(res: Response, error: Error) {
-    res.status(400).json({message: error.stack});
+    res.status(400).json({message: error.message});
   }
   private static generateGameListJson(games: Game[]): Array<{}> {
     let json: Array<{}> = [];
@@ -64,7 +64,7 @@ export class GameStrategies {
         participantId: game.participantId,
         size: game.fieldSize,
         gameTime: game.time,
-        gameResult: game.gameState
+        gameState: game.gameState
       });
     }
     return json;
@@ -91,26 +91,25 @@ export class GameStrategies {
       } catch (error) {
         reject(error);
       }
+      resolve();
     });
   }
 
   public static async returnIncompleteGame(incompleteGameId: number, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {
-        const gameData: DataForCreation = new Dictionary<string, any>();
-        gameData.setValue("id", incompleteGameId);
-
-        const game: Game = await GameManager.findGame(gameData);
-        GameStrategies.returnGameReport(game, res);
+        await GameStrategies.returnGameReport(incompleteGameId, res);
       } catch (error) {
         reject(error);
       }
+      resolve();
     });
   }
 
-  private static async returnGameReport(game: Game, res: Response): Promise<void> {
+  public static async returnGameReport(gameId: number, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {
+        const game: Game = await GameManager.findGameById(gameId);
         const creator: User = await GameManager.findUser(game.creatorGameId);
         let participantName: string = null;
         if (game.participantId) {
@@ -133,10 +132,45 @@ export class GameStrategies {
       } catch (error) {
         reject(error);
       }
+      resolve();
     });
   }
 
   public static returnNullId(res: Response) {
     res.status(200).json({id: null});
+  }
+
+  public static setLoser(
+    userId: number,
+    gameId: number,
+    res: Response
+  ): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        await GameManager.setLoser(userId, gameId);
+        res.status(200);
+      } catch (error) {
+        reject(error);
+      }
+      resolve();
+    });
+  }
+
+  public static async takePlayerMove(
+    position: MyPosition,
+    userId: number,
+    gameId: number,
+    res: Response
+  ): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        await GameManager.takePlayerMove(userId, position, gameId);
+        res.status(200);
+      } catch (error) {
+        reject(error);
+      }
+      resolve();
+    });
+
   }
 }

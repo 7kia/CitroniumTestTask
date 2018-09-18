@@ -41,7 +41,7 @@ class GameRepository extends Repository {
       .catch((error) => {
         logger.error("Error to SELECT queue.");
         logger.error(error.toString());
-        reject(new Error(error.toString()));
+        reject(error);
       });
 
       const gameList: Game[] = [];

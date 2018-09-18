@@ -128,6 +128,9 @@ describe("GameManager. " +
 
     await GameManager.unconnectPlayer(creator.id);
     await GameManager.unconnectPlayer(participant.id);
+    creator = await postgreSqlManager.users.find(creatorData);
+    participant = await postgreSqlManager.users.find(participantData);
+
     await deleteGameIfExist(gameData);
     await postgreSqlManager.games.create(gameData);
     let foundGames: Game[] = await postgreSqlManager.games.find(gameData);

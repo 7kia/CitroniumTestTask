@@ -19,6 +19,7 @@ export class AuthorizationActions {
       } catch (error) {
         AuthorizationStrategies.sendAuthorizeError(res, error);
       }
+      resolve();
     });
   }
 
@@ -33,6 +34,7 @@ export class AuthorizationActions {
       } catch (error) {
         AuthorizationStrategies.sendAuthorizeError(res, error);
       }
+      resolve();
     });
   }
 

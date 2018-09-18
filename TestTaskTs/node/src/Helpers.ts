@@ -11,6 +11,14 @@ class Helpers {
   ): string {
     return changeString.substr(0, index) + replacement + changeString.substr(index + replacement.length);
   }
+
+  public static between (
+    value: number,
+    startRange: number,
+    endRange: number
+  ): boolean {
+    return (startRange <= value) && (value <= endRange);
+  }
 }
 
 type DataForCreation = Dictionary<string, any>;

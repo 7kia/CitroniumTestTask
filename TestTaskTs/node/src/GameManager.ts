@@ -176,6 +176,18 @@ class GameManager {
       }
     });
   }
+  public static async findGameById(gameId: number): Promise<Game> {
+    return new Promise<Game>(async (resolve, reject) => {
+      try {
+        const gameData: DataForCreation = new Dictionary<string, any>();
+        gameData.setValue("id", gameId);
+
+        resolve(await GameManager.findGame(gameData));
+      } catch (error) {
+        reject(new Error("Games with id=" + gameId + " not found"));
+      }
+    });
+  }
   public static async findGame(gameData: DataForCreation): Promise<Game> {
     return new Promise<Game>(async (resolve, reject) => {
       try {
@@ -524,6 +536,26 @@ class GameManager {
       }
     }
     return true;
+  }
+
+  public static setLoser(userId: number, gameId: number): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        const game: Game = await GameManager.findGameById(gameId);
+        const newGameData: DataForCreation = new Dictionary<string, any>();
+        if (game.participantId === userId) {
+          newGameData.setValue("win_player_id", game.creatorGameId);
+          newGameData.setValue("game_state", GameState.CreatorWin);
+        } else {
+          newGameData.setValue("win_player_id", game.participantId);
+          newGameData.setValue("game_state", GameState.ParticipantWin);
+        }
+        await postgreSqlManager.games.update(gameId, newGameData);
+      } catch (error) {
+        reject(error);
+      }
+      resolve();
+    });
   }
 }
 
