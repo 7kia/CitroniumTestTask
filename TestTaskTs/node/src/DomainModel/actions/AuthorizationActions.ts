@@ -23,7 +23,7 @@ export class AuthorizationActions {
     });
   }
 
-  public static async signIn(req: Request, res: Response): Promise<void> {
+  public static async login(req: Request, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       const username: string = req.query.name;
       const password: string = req.query.password;

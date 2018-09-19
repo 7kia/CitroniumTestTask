@@ -58,10 +58,10 @@ export class GameRules {
   }
 
   public static async canStandLoser(userId: number, gameId: number): Promise<boolean> {
-    return new Promise<void>(async (resolve, reject) => {
+    return new Promise<boolean>(async (resolve, reject) => {
       try {
         const user: User = await GameManager.findUser(userId);
-        const game: Game = await GameManager.findGame(gameId);
+        const game: Game = await GameManager.findGameById(gameId);
         if (!game.participantId) {
           reject(new Error("Game with id =" + gameId + " not have participant"));
         }
@@ -78,7 +78,7 @@ export class GameRules {
     });
   }
 
-  public static async existGame(gameId: number): Promise<boolean {
+  public static async existGame(gameId: number): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       try {
         const game: Game = await GameManager.findGameById(gameId);

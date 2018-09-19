@@ -13,8 +13,8 @@ import * as chalk from "chalk";
 import * as cors from "cors";
 import expressValidator = require("express-validator");
 // API Routes imports
-import UsersAPIRoutes from "./routes/api/UserRoutes";
-import GamesAPIRoutes from "./routes/api/GameRoutes";
+import authRoutes from "./routes/api/AuthRoutes";
+import gameRoutes from "./routes/api/GameRoutes";
 
 import {NODE_SERVER_URL, REACT_SERVER_URL} from "./routes/constants";
 import {NextFunction, Request, Response} from "express";
@@ -69,8 +69,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Initialization
-UsersAPIRoutes(app);
-GamesAPIRoutes(app);
+app.use("/api/auth", authRoutes);
+app.use("/api/game", gameRoutes);
 
 if (process.env.NODE_ENV === "production") {
   app.use("/images", express.static(path.join(__dirname, "..", "dist-react", "images"), {maxAge: 31557600000}));

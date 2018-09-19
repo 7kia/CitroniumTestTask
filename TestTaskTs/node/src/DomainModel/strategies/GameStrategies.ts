@@ -18,7 +18,7 @@ export class GameStrategies {
         const size: number = req.query.size;
         const gameId: number = await GameManager.createGameAndConnectCreator(userId, size);
 
-        const createdGame: Game = await GameManager.findGame(gameId);
+        const createdGame: Game = await GameManager.findGameById(gameId);
         res.status(200).json({gameId: gameId, accessToken: createdGame.accessToken});
 
         await GameManager.waitParticipant(createdGame.id);

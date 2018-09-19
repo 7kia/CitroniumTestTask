@@ -19,7 +19,7 @@ export class GameActions {
       } catch (error) {
         GameStrategies.sendErrorMessage(res, error);
       }
-      resolve()
+      resolve();
     });
 
   }
