@@ -1,10 +1,11 @@
-'use strict';
+"use strict";
 
-import * as _ from 'lodash';
-import * as Promise from 'bluebird';
-import {Error401, UnrecognizedStatusError} from './request_errors';
-import {AUTH_TOKEN_LS_KEY} from '../../consts/auth';
-import {IDictionary} from '../interfaces/data';
+import * as _ from "lodash";
+import * as Promise from "bluebird";
+import {Error401, UnrecognizedStatusError} from "./request_errors";
+import {AUTH_TOKEN_LS_KEY} from "../../consts/auth";
+import {IDictionary} from "../interfaces/data";
+import {BACKEND_SERVER_ADDRESS} from "../../consts/server";
 
 const DEBUG = true;
 
@@ -12,8 +13,7 @@ interface RequestOptions {
     headers?: {[h: string]: string};
 }
 
-type RequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-
+type RequestMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 // TODO: add HTML different statuses/errors handling
 export function request(method: RequestMethod , url: string, data?: IDictionary<any>, opts?: RequestOptions) {
@@ -21,7 +21,8 @@ export function request(method: RequestMethod , url: string, data?: IDictionary<
     const defaultHeaders = {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "authorization": localStorage.getItem(AUTH_TOKEN_LS_KEY)
+        "authorization": localStorage.getItem(AUTH_TOKEN_LS_KEY),
+        "Origin": BACKEND_SERVER_ADDRESS
     };
 
     let fetchOpts: RequestInit = {
@@ -32,15 +33,16 @@ export function request(method: RequestMethod , url: string, data?: IDictionary<
     if (data) { fetchOpts.body = JSON.stringify(data) }
     if (opts && opts.headers) { fetchOpts.headers = _.assign({}, fetchOpts.headers, opts.headers) }
 
-    if (DEBUG) { console.info('FETCH OPTS:',fetchOpts); }
+    if (DEBUG) { console.info("FETCH OPTS:",fetchOpts); }
 
     return Promise.resolve()
         .then(() => fetch(url, fetchOpts))
         .then((res: Response) => {
-            if (DEBUG) { console.info('FETCH RESPONSE:', res.status, res); }
+            if (DEBUG) { console.info("FETCH RESPONSE:", res.status, res); }
 
             switch (res.status) {
                 case 200:
+                case 400:
                     return res.json();
                 case 204:
                     return {};
@@ -49,7 +51,7 @@ export function request(method: RequestMethod , url: string, data?: IDictionary<
                 default:
                     throw new UnrecognizedStatusError("");
             }
-        })
+        });
     // .catch((err: any) => {
     //     if (DEBUG) { console.info("FETCH ERROR:", err); }
     //     throw err;
@@ -59,21 +61,21 @@ export function request(method: RequestMethod , url: string, data?: IDictionary<
 export function apiGET(url: string, params?: any) {
     const queryParams = '';
     const urlWithParams = `${url}?${queryParams}`;
-    return request('GET', urlWithParams);
+    return request("GET", urlWithParams);
 }
 
 export function apiPOST (url: string, data?: IDictionary<any>, opts?: RequestOptions): Promise<any> {
-    return request('POST', url, data);
+    return request("POST", url, data);
 }
 
 export function apiPUT (url: string, data?: IDictionary<any>, opts?: RequestOptions): Promise<any> {
-    return request('PUT', url, data, opts);
+    return request("PUT", url, data, opts);
 }
 
 export function apiPATCH (url: string, data?: IDictionary<any>, opts?: RequestOptions): Promise<any> {
-    return request('PATCH', url, data, opts);
+    return request("PATCH", url, data, opts);
 }
 
 export function apiDELETE (url: string): Promise<any> {
-    return request('DELETE', url);
+    return request("DELETE", url);
 }

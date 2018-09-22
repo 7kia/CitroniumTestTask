@@ -17,6 +17,7 @@ import {User} from "../src/db/Entity/User";
 import Dictionary from "typescript-collections/dist/lib/Dictionary";
 import {MyPosition} from "../src/MyPosition";
 import {GameReport} from "../src/db/Entity/GameReport";
+import {GameRules} from "../src/DomainModel/rules/GameRules";
 
 describe("GameManager. " +
   "Менеджер игры. Позволяет игрокам взаимодействовать с конкретной " +
@@ -46,11 +47,12 @@ describe("GameManager. " +
   it("Позволяет найти игровую партию по имени игроков создателей " +
     "и участников, и по размеру поля.", async () => {
     const gameData: {[id: string]: any} = {
-      creator_name: "Player3",
-      participant_name: "Player4",
-      field_size: 2,
+      creator_name: "Player2",
+      participant_name: "Player3",
+      field_size: 3,
     };
-    const games: Game[] = await GameManager.getGame("Player1", null, null);
+
+    const games: Game[] = await GameManager.getGame("Player0", null, null);
     const games2: Game[] = await GameManager.getGame(null, gameData.participant_name, null);
     const games3: Game[] = await GameManager.getGame(null, null, gameData.field_size);
     const games4: Game[] = await GameManager.getGame(
@@ -105,11 +107,22 @@ describe("GameManager. " +
   });
   it("Может определить: станет ли этот игрок участником в этой " +
     "партии.", async () => {
-    const willParticipantToGame0: boolean = await GameManager.canStandParticipant(4, 0);
-    const willParticipantToGame1: boolean = await GameManager.canStandParticipant(4, 1);
+
+    let userData: DataForCreation = new Dictionary<string, any>();
+    userData.setValue("name", "PlayerNeww");
+    userData.setValue("email", "eNew2.e@com");
+    userData.setValue("password", "sdf");
+
+    await deleteUserIfExist(userData);
+    await postgreSqlManager.users.create(userData);
+    const user: User = await postgreSqlManager.users.find(userData);
+    const willParticipantToGame0: boolean = await GameRules.canStandParticipant(user.id, 0);
+    const willParticipantToGame1: boolean = await GameRules.canStandParticipant(user.id, 1);
 
     assert.strictEqual(willParticipantToGame0, true);
     assert.strictEqual(willParticipantToGame1, false);
+
+    await postgreSqlManager.users.deleteUser(userData);
   });
   it("Может подключить игрока к партии.", async () => {
     let gameData: DataForCreation = new Dictionary<string, any>();
@@ -122,6 +135,8 @@ describe("GameManager. " +
     creatorData.setValue("name", "PlayerCreator");
     let participantData: DataForCreation = new Dictionary<string, any>();
     participantData.setValue("name", "PlayerParticipant");
+    await postgreSqlManager.users.create(creatorData);
+    await postgreSqlManager.users.create(participantData);
 
     let creator: User = await postgreSqlManager.users.find(creatorData);
     let participant: User = await postgreSqlManager.users.find(participantData);
@@ -158,6 +173,9 @@ describe("GameManager. " +
     await GameManager.unconnectPlayer(creator.id);
     await GameManager.unconnectPlayer(participant.id);
     await postgreSqlManager.games.deleteGame(gameData);
+    await postgreSqlManager.users.deleteUser(creatorData);
+    await postgreSqlManager.users.deleteUser(participantData);
+
   });
   it("Может дать время игровой партии.", async () => {
     const gameTime: number = await GameManager.getGameTime(0);

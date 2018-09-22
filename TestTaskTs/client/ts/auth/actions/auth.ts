@@ -1,20 +1,21 @@
-'use strict';
+"use strict";
 
-import {Dispatch as IDispatch} from 'redux';
-import {IAction} from '../../common/interfaces/action';
-import {IAuthLoginCreds, IAuthResponse, IAuthSignupCreds} from '../interfaces/auth';
-import {IStore} from '../../reducer';
-import {apiPOST} from '../../common/helpers/request';
-import {AUTH_TOKEN_LS_KEY} from '../../consts/auth';
-import {createRequestActionTypes} from '../../common/helpers/actions';
-
+import {Dispatch as IDispatch} from "redux";
+import {IAction} from "../../common/interfaces/action";
+import {IAuthLoginCreds, IAuthResponse, IAuthSignupCreds} from "../interfaces/auth";
+import {IStore} from "../../reducer";
+import {apiPOST} from "../../common/helpers/request";
+import {AUTH_TOKEN_LS_KEY} from "../../consts/auth";
+import {createRequestActionTypes} from "../../common/helpers/actions";
+import {BACKEND_SERVER_ADDRESS} from "../../consts/server";
+import {Json} from "../../consts/types";
 
 /* TYPES */
 
-export const AUTHENTICATE_USER = 'auth/AUTHENTICATE_USER';
-export const UNAUTHENTICATE_USER = 'auth/UNAUTHENTICATE_USER';
-export const RESET_AUTH_FORM = 'auth/RESET_AUTH_FORM';
-export const authFormSubmitActionTypes = createRequestActionTypes('auth/FORM_SUBMIT');
+export const AUTHENTICATE_USER = "auth/AUTHENTICATE_USER";
+export const UNAUTHENTICATE_USER = "auth/UNAUTHENTICATE_USER";
+export const RESET_AUTH_FORM = "auth/RESET_AUTH_FORM";
+export const authFormSubmitActionTypes = createRequestActionTypes("auth/FORM_SUBMIT");
 
 /* ACTIONS */
 
@@ -28,45 +29,57 @@ export const authRequestError = (error: string): IAction => ({
     payload: error
 });
 
-export const loginUser = ({ email, password }: IAuthLoginCreds, onSuccess?: Function) => {
-    return (dispatch: IDispatch<IStore>) => {
-        dispatch<IAction>(authRequestStart);
+export const loginUser = (credentials: IAuthLoginCreds, onSuccess?: Function) => {
+  return (dispatch: IDispatch<IStore>) => {
+    const email: string = credentials.email;
+    const password: string = credentials.password;
+    dispatch<IAction>(authRequestStart);
 
-        return apiPOST('/api/auth/login/', {email, password})
-            .then((data: IAuthResponse) => {
-                dispatch<IAction>(authRequestSuccess);
-                dispatch<IAction>(authenticateUser());
-                localStorage.setItem(AUTH_TOKEN_LS_KEY, data.token);
-                onSuccess && onSuccess(data);
-            })
-            // TODO: catch only specific error
-            .catch((err: any) => {
-                dispatch<IAction>(authRequestError('Login failed, try again'));
-            });
-    }
+    return apiPOST(BACKEND_SERVER_ADDRESS + "/api/auth/login/", {email, password})
+    .then((data: Json) => {
+      console.log(data);
+      if (data.hasOwnProperty("message")) {
+        dispatch<IAction>(authRequestError(data.message));
+      } else {
+        dispatch<IAction>(authRequestSuccess);
+        dispatch<IAction>(authenticateUser());
+        localStorage.setItem(AUTH_TOKEN_LS_KEY, data.token);
+        if (onSuccess) {
+          onSuccess(data);
+        }
+      }
+    })
+    .catch((err: any) => {
+      dispatch<IAction>(authRequestError("Login failed, try again"));
+    });
+  };
 };
-
 
 export const logoutUser = (): IAction => {
-    localStorage.removeItem(AUTH_TOKEN_LS_KEY);
-    return unauthenticateUser();
+  localStorage.removeItem(AUTH_TOKEN_LS_KEY);
+  return unauthenticateUser();
 };
 
+export const signupUser = ({ email, name, password }: IAuthSignupCreds, onSuccess?: Function) => {
+  return (dispatch: IDispatch<IStore>) => {
+    dispatch<IAction>(authRequestStart);
 
-export const signupUser = ({ email, password }: IAuthSignupCreds, onSuccess?: Function) => {
-    return (dispatch: IDispatch<IStore>) => {
-        dispatch<IAction>(authRequestStart);
-
-        return apiPOST('/api/auth/signup/', {email, password})
-            .then((data: IAuthResponse) => {
-                dispatch<IAction>(authRequestSuccess);
-                dispatch<IAction>(authenticateUser());
-                localStorage.setItem(AUTH_TOKEN_LS_KEY, data.token);
-                onSuccess && onSuccess(data);
-            })
-            // TODO: catch only specific error
-            .catch((err: any) => {
-                dispatch<IAction>(authRequestError('Signup failed, try again'));
-            });
-    }
+    return apiPOST(BACKEND_SERVER_ADDRESS + "/api/auth/signUp/", {email, name, password})
+    .then((data: Json) => {
+      console.log(data);
+      if (data.hasOwnProperty("message")) {
+        dispatch<IAction>(authRequestError(data.message));
+      } else {
+        dispatch<IAction>(authRequestSuccess);
+        dispatch<IAction>(authenticateUser());
+        localStorage.setItem(AUTH_TOKEN_LS_KEY, data.token);
+        if (onSuccess) {
+          onSuccess(data);
+        }
+      }      })
+    .catch((error) => {
+      dispatch<IAction>(authRequestError("Signup failed, try again"));
+    });
+  };
 };
+

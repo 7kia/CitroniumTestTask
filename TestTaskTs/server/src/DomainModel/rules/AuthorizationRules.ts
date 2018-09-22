@@ -7,17 +7,17 @@ import {postgreSqlManager} from "../../db/index";
 import {User} from "../../db/Entity/User";
 
 export class AuthorizationRules {
-  public static async canSignIn(username: string, password: string): Promise<boolean> {
+  public static async canSignIn(email: string, password: string): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       try {
         let foundUser: User = null;
         try {
           const userData: DataForCreation = new Dictionary<string, {}>();
-          userData.setValue("name", username);
+          userData.setValue("email", email);
 
           foundUser = await postgreSqlManager.users.find(userData);
         } catch (error) {
-          throw new Error("User with name \"" + username + "\" not found");
+          reject(new Error("User with email \"" + email + "\" not found"));
         }
         if (foundUser) {
           if (password === foundUser.password) {
@@ -32,12 +32,7 @@ export class AuthorizationRules {
     });
   }
 
-  public static async canSignUp(
-    email: string,
-    password: string,
-    repeatPassword: string,
-    username: string
-  ): Promise<boolean> {
+  public static async canSignUp(email: string, username: string): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       try {
         if (await AuthorizationRules.existUser("email", email)) {
@@ -45,9 +40,6 @@ export class AuthorizationRules {
         }
         if (await AuthorizationRules.existUser("name", username)) {
           reject(new Error("User with the name exist"));
-        }
-        if (password !== repeatPassword) {
-          reject(new Error("Passwords is not equal"));
         }
         resolve(true);
       } catch (error) {

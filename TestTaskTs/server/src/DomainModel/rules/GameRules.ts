@@ -7,8 +7,102 @@ import {postgreSqlManager} from "../../db/index";
 import {User} from "../../db/Entity/User";
 import {GameManager} from "../../GameManager";
 import {Game, GameState} from "../../db/Entity/Game";
+import {MyPosition} from "../../MyPosition";
 
-export class GameRules {
+const Cell: {[id: string]: string} = {
+  Empty: "?",
+  Cross: "X",
+  Zero: "0"
+};
+
+enum PlayerRole {
+  Creator = 1,
+  Participant,
+  Observer
+}
+
+class GameRules {
+  public static allCellFilled(game: Game) {
+    for (const row of game.field) {
+      for (const cell of row) {
+        if (cell === Cell.Empty.toString()) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  public static async canStandParticipant(
+    playerId: number,
+    gameId: number
+  ): Promise<boolean> {
+    let searchGameData: DataForCreation = new Dictionary<string, any>();
+    searchGameData.setValue("id", gameId);
+    let searchPlayerData: DataForCreation = new Dictionary<string, any>();
+    searchPlayerData.setValue("id", playerId);
+
+    const player: User = await postgreSqlManager.users.find(searchPlayerData);
+    const role: PlayerRole = await GameManager.getRoleToGame(playerId, gameId);
+    const games: Game[] = await postgreSqlManager.games.find(searchGameData);
+    const game: Game = games[0];
+
+    if (role === PlayerRole.Observer) {
+      if (!player.accessToken && !game.participantId) {
+        return Promise.resolve(true);
+      }
+    }
+    return Promise.resolve(false);
+  }
+
+  public static filledHorizontal(
+    field: string[],
+    playerSign: string,
+    position: MyPosition,
+  ): boolean {
+    let filledHorizontal: boolean = true;
+    for (let x: number = 0; x < field.length; x++) {
+      if (field[position.y][x] === playerSign) {
+        continue;
+      }
+      filledHorizontal = false;
+      break;
+    }
+    return filledHorizontal;
+  }
+  public static filledVertical(
+    field: string[],
+    playerSign: string,
+    position: MyPosition,
+  ): boolean {
+    let filledHorizontal: boolean = true;
+    for (let y: number = 0; y < field.length; y++) {
+      if (field[y][position.x] === playerSign) {
+        continue;
+      }
+      filledHorizontal = false;
+      break;
+    }
+    return filledHorizontal;
+  }
+  public static filledDiagonal(
+    field: string[],
+    playerSign: string,
+    position: MyPosition,
+    diagonalFunction: (x: number, position: MyPosition) => number,
+  ): boolean {
+    let filledDiagonal: boolean = true;
+    for (let x: number = 0; x < field.length; x++) {
+      const y: number = diagonalFunction(x, position);
+      if ((y >= 0) && (y < field.length) && (field[y][x] === playerSign)) {
+        continue;
+      }
+      filledDiagonal = false;
+      break;
+    }
+    return filledDiagonal;
+  }
+
   public static async canCreateGame(userId: number, size: number): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       let foundUser: User = await GameManager.findUser(userId);
@@ -35,7 +129,7 @@ export class GameRules {
   public static async canConnectToGame(userId: number, gameId: number): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       try {
-        const canStandParticipant: boolean =  await GameManager.canStandParticipant(userId, gameId);
+        const canStandParticipant: boolean =  await GameRules.canStandParticipant(userId, gameId);
         if (!canStandParticipant) {
           reject(new Error("Player not can connect"));
         }
@@ -134,3 +228,9 @@ export class GameRules {
     });
   }
 }
+
+export {
+  GameRules,
+  PlayerRole,
+  Cell
+};

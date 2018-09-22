@@ -1,11 +1,10 @@
-'use strict';
+"use strict";
 
-import * as React from 'react';
-import {FormErrors, FormProps, reduxForm, SubmitHandler as ISubmitHandler} from 'redux-form';
-import {Alert, Button, Form, Panel} from 'react-bootstrap';
-import Input from '../../common/forms/fields/Input';
-import * as validators from '../../common/forms/validators';
-
+import * as React from "react";
+import {FormErrors, FormProps, reduxForm, SubmitHandler as ISubmitHandler} from "redux-form";
+import {Alert, Button, Form, Panel} from "react-bootstrap";
+import Input from "../../common/forms/fields/Input";
+import * as validators from "../../common/forms/validators";
 
 export interface IFormData {
     email?: string;
@@ -20,7 +19,6 @@ interface ILoginFormProps extends IFormProps {
     loading: boolean;
 }
 
-
 function validate(formData: IFormData): FormErrors<IFormData> {
     const { email, password } = formData;
     let errors: IFormData = {};
@@ -31,16 +29,15 @@ function validate(formData: IFormData): FormErrors<IFormData> {
     return errors;
 }
 
-
 @reduxForm<IFormData, ILoginFormProps, {}>({
-    form: 'LoginForm',
+    form: "LoginForm",
     validate
 })
 class LoginForm extends React.Component<ILoginFormProps, {}> {
 
     private submit: ISubmitHandler<IFormData, ILoginFormProps, {}> = (formData: IFormData): void => {
         this.props.onSubmit && this.props.onSubmit(formData);
-    };
+    }
 
     private renderAuthError(error: string): JSX.Element {
         return <Alert bsStyle="warning">{error}</Alert>;
@@ -51,8 +48,8 @@ class LoginForm extends React.Component<ILoginFormProps, {}> {
 
         return (
             <Panel header="Login">
-                <Form onSubmit={ handleSubmit && handleSubmit(this.submit) }>
-                    { authError ? this.renderAuthError(authError) : null }
+                <Form onSubmit={handleSubmit && handleSubmit(this.submit)}>
+                    {authError ? this.renderAuthError(authError) : null}
 
                     <Input name="email" label="Email" disabled={loading}/>
                     <Input name="password" label="Password" type="password" disabled={loading}/>

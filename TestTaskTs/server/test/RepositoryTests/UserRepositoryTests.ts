@@ -12,7 +12,7 @@ import Dictionary from "typescript-collections/dist/lib/Dictionary";
 
 describe("UserRepository. " +
     "Позволяет брать и редактировать данные пользователей.", () => {
-  const deleteUserIfExist = async (userData: DataForCreation ) => {
+  const deleteUserIfExist = async (userData: DataForCreation ): Promise<void> => {
     try {
       const foundUser: User = await postgreSqlManager.users.find(userData);
       if (foundUser) {
@@ -38,7 +38,7 @@ describe("UserRepository. " +
     userData1.setValue("id", 0);
     let userData2: DataForCreation = new Dictionary<string, any>();
     userData2.setValue("email", "e2.e@com");
-    userData2.setValue("name", "Player2");
+    userData2.setValue("name", "Player1");
 
     const user: User = await postgreSqlManager.users.find(userData1);
     const user2: User = await postgreSqlManager.users.find(userData2);

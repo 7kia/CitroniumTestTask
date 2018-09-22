@@ -19,6 +19,7 @@ import gameRoutes from "./routes/api/GameRoutes";
 import {NODE_SERVER_URL, REACT_SERVER_URL} from "./routes/constants";
 import {NextFunction, Request, Response} from "express";
 
+
 if (process.env.NODE_ENV !== "production") {
   dotenv.config({ path: ".env" });
   clear({toStart: true});
@@ -33,6 +34,7 @@ app.use(compression());
 app.use(logger("dev"));
 app.use(bodyParser.json());	
 app.use(bodyParser.urlencoded({ extended: true }));
+
 app.use(expressValidator());
 app.use(session({
   resave: true,
@@ -64,7 +66,7 @@ router.options("*", cors(options));
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, authorization");
   next();
 });
 

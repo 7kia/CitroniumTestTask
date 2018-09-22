@@ -42,7 +42,7 @@ describe("GameDataRepository. " +
       gameData.setValue("id", 0);
       let gameData2: DataForCreation = new Dictionary<string, any>();
       gameData2.setValue("creator_game_id", 2);
-      gameData2.setValue("field_size", 2);
+      gameData2.setValue("field_size", 3);
       const games: Game[] = await postgreSqlManager.games.find(gameData);
       const games2: Game[] = await postgreSqlManager.games.find(gameData2);
 
@@ -101,11 +101,11 @@ describe("GameDataRepository. " +
     gameData.setValue("field_size", 9);
     gameData.setValue("field", ["???", "???", "???"]);
     gameData.setValue("access_token", "gameUpdate");
-    gameData.setValue("time", 0);
+    gameData.setValue("time", 5);
     gameData.setValue("leading_player_id", 6);
     let newGameData: DataForCreation = new Dictionary<string, any>();
     newGameData.setValue("field", ["?X?", "???", "???"]);
-    newGameData.setValue("time", 0.5);
+    newGameData.setValue("time", 5);
     newGameData.setValue("leading_player_id", 7);
     let createdGameData: DataForCreation = new Dictionary<string, any>();
     createdGameData.setValue("access_token", "gameUpdate");

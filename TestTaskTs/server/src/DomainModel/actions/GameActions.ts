@@ -10,8 +10,8 @@ import {MyPosition} from "../../MyPosition";
 export class GameActions {
   public static async createGame(req: Request, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
-      const userId: number = req.query.userId;
-      const size: number = req.query.size;
+      const userId: number = req.body.userId;
+      const size: number = req.body.size;
       try {
         if (await GameRules.canCreateGame(userId, size)) {
           await GameStrategies.createGame(req, res);
@@ -25,9 +25,9 @@ export class GameActions {
   }
   public static async findGames(req: Request, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
-      const creatorName: string = req.query.creatorName;
-      const participantName: string = req.query.participantName;
-      const size: number = req.query.size;
+      const creatorName: string = req.body.creatorName;
+      const participantName: string = req.body.participantName;
+      const size: number = req.body.size;
       try {
         if (await GameRules.checkSearchGameParameters(creatorName, participantName, size)) {
           await GameStrategies.findGames(req, res);
@@ -40,8 +40,8 @@ export class GameActions {
   }
   public static async connectToGame(req: Request, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
-      const userId: number = req.query.userId;
-      const gameId: number = req.query.gameId;
+      const userId: number = req.body.userId;
+      const gameId: number = req.body.gameId;
       try {
         if (await GameRules.canConnectToGame(userId, gameId)) {
           await GameStrategies.connectToGame(userId, gameId, res);
@@ -54,7 +54,7 @@ export class GameActions {
   }
   public static async getUserIncompleteGame(req: Request, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
-      const userId: number = req.query.userId;
+      const userId: number = req.body.userId;
       try {
         const incompleteGameId: number = await GameManager.getIncompleteGame(userId);
         if (incompleteGameId !== null) {
@@ -71,8 +71,8 @@ export class GameActions {
 
   public static async setLoser(req: Request, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
-      const userId: number = req.query.userId;
-      const gameId: number = req.query.gameId;
+      const userId: number = req.body.userId;
+      const gameId: number = req.body.gameId;
       try {
         if (await GameRules.canStandLoser(userId, gameId)) {
           await GameStrategies.setLoser(userId, gameId, res);
@@ -85,7 +85,7 @@ export class GameActions {
   }
   public static async getGameReport(req: Request, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
-      const gameId: number = req.query.gameId;
+      const gameId: number = req.body.gameId;
       try {
         if (await GameRules.existGame(gameId)) {
           await GameStrategies.returnGameReport(gameId, res);
@@ -99,10 +99,10 @@ export class GameActions {
 
   public static async takePlayerMove(req: Request, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
-      const row: number = req.query.row;
-      const column: number = req.query.column;
-      const userId: number = req.query.userId;
-      const gameId: number = req.query.gameId;
+      const row: number = req.body.row;
+      const column: number = req.body.column;
+      const userId: number = req.body.userId;
+      const gameId: number = req.body.gameId;
       try {
         if (await GameRules.canTakeMove(userId, gameId)) {
           if (await GameRules.positionNotOutFiled(column, row, gameId)) {

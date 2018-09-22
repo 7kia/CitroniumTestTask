@@ -12,31 +12,20 @@ import * as Parallel from "async-parallel";
 import Dictionary from "typescript-collections/dist/lib/Dictionary";
 import {MyPosition} from "./MyPosition";
 import {Repository} from "./db/repositories/Repository";
-
-enum PlayerRole {
-  Creator = 1,
-  Participant,
-  Observer
-}
-
-enum Cell {
-  Empty = "?",
-  Cross = "X",
-  Zero = "0"
-}
+import {Cell, GameRules, PlayerRole} from "./DomainModel/rules/GameRules";
 
 const GAME_MESSAGES: {[id: string]: string} = {
-  yourMove: "Your move",
+  yourMove: "Your move"
 };
 
-const ACCESS_TOKEN_LENGTH: number = 10;// TODO: подкоректируй значения
+const ACCESS_TOKEN_LENGTH: number = 10;
 
 const ERROR_GAME_MESSAGES: {[id: string]: string} = {
   unknownSymbol: "Unknown symbol",
   tokenNotCorrespond: "Access token not correspond.",
   moveAnotherPlayer: "Now move another player.",
   gameEnd: "Game end.",
-  thisCellFilled: "Player move to filled cell.",
+  thisCellFilled: "Player move to filled cell."
 };
 
 class GameManager {
@@ -49,7 +38,7 @@ class GameManager {
   public static async getGame(
     creatorName: string,
     participantName: string,
-    fieldSize: number,
+    fieldSize: number
   ): Promise<Game[]> {
     try {
       let searchData: DataForCreation = new Dictionary<string, any>();
@@ -79,7 +68,7 @@ class GameManager {
   }
   public static async getRoleToGame(
     playerId: number,
-    gameId: number,
+    gameId: number
   ): Promise<PlayerRole> {
     let searchGameData: DataForCreation = new Dictionary<string, any>();
     searchGameData.setValue("id", gameId);
@@ -100,30 +89,8 @@ class GameManager {
     return Promise.resolve(role);
   }
 
-  public static async canStandParticipant(
-    playerId: number,
-    gameId: number,
-  ): Promise<boolean> {
-    let searchGameData: DataForCreation = new Dictionary<string, any>();
-    searchGameData.setValue("id", gameId);
-    let searchPlayerData: DataForCreation = new Dictionary<string, any>();
-    searchPlayerData.setValue("id", playerId);
-
-    const player: User = await postgreSqlManager.users.find(searchPlayerData);
-    const role: PlayerRole = await GameManager.getRoleToGame(playerId, gameId);
-    const games: Game[] = await postgreSqlManager.games.find(searchGameData);
-    const game: Game = games[0];
-
-    if (role === PlayerRole.Observer) {
-      if (!player.accessToken && !game.participantId) {
-        return Promise.resolve(true);
-      }
-    }
-    return Promise.resolve(false);
-  }
-
   public static async connectPlayer(playerId: number, gameId: number): Promise<boolean> {
-    const willParticipant: boolean = await GameManager.canStandParticipant(playerId, gameId);
+    const willParticipant: boolean = await GameRules.canStandParticipant(playerId, gameId);
     let gameSearchData: DataForCreation = new Dictionary<string, any>();
     gameSearchData.setValue("id", gameId);
     let userSearchData: DataForCreation = new Dictionary<string, any>();
@@ -160,13 +127,11 @@ class GameManager {
       try {
         let user: User = await GameManager.findUser(userId);
 
-        console.log("user.accessToken " + user.accessToken);
         if (user.accessToken) {
           const gameData: DataForCreation = new Dictionary<string, any>();
           gameData.setValue("access_token", user.accessToken);
 
           const incompleteGame: Game = await GameManager.findGame(gameData);
-          console.log("incompleteGame.id " + incompleteGame.id);
           resolve(incompleteGame.id);
         } else {
           resolve(null);
@@ -229,7 +194,7 @@ class GameManager {
   public static async takePlayerMove(
     playerId: number,
     position: MyPosition,
-    gameId: number,
+    gameId: number
   ): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       let gameSearchData: DataForCreation = new Dictionary<string, any>();
@@ -257,7 +222,7 @@ class GameManager {
           const winnerId: number = GameManager.findWinner(game, position);
           if (winnerId !== GameManager.NO_WINNER) {
             GameManager.signWinner(newGameData, winnerId, game.creatorGameId);
-          } else if (GameManager.allCellFilled(game)) {
+          } else if (GameRules.allCellFilled(game)) {
             newGameData.setValue("game_state", GameState.Draw);
           } else {
             GameManager.swapMoveLaw(game);
@@ -269,7 +234,7 @@ class GameManager {
           logger.error(
             ERROR_GAME_MESSAGES.thisCellFilled
             + "Game with id=" + game.id
-            + ",player with id=" + player.id,
+            + ",player with id=" + player.id
           );
           reject(new Error(ERROR_GAME_MESSAGES.thisCellFilled));
         }
@@ -317,10 +282,7 @@ class GameManager {
     }
   }
 
-  public static findWinner(
-    game: Game,
-    position: MyPosition,
-  ): number {
+  public static findWinner(game: Game, position: MyPosition): number {
     const playerSign: string = GameManager.getLeadingPlayerSign(game);
     const firstDiagonalFunc: (x: number, pos: MyPosition) => number = (x: number, pos: MyPosition) => {
       return (x - pos.x) + pos.y;
@@ -328,10 +290,10 @@ class GameManager {
     const secondDiagonalFunc: (x: number, pos: MyPosition) => number = (x: number, pos: MyPosition) => {
       return pos.y - (x - pos.x);
     };
-    if (GameManager.filledHorizontal(game.field, playerSign, position)
-      || GameManager.filledVertical(game.field, playerSign, position)
-      || GameManager.filledDiagonal(game.field, playerSign, position, firstDiagonalFunc)
-      || GameManager.filledDiagonal(game.field, playerSign, position, secondDiagonalFunc)
+    if (GameRules.filledHorizontal(game.field, playerSign, position)
+      || GameRules.filledVertical(game.field, playerSign, position)
+      || GameRules.filledDiagonal(game.field, playerSign, position, firstDiagonalFunc)
+      || GameRules.filledDiagonal(game.field, playerSign, position, secondDiagonalFunc)
     ) {
       return game.leadingPlayerId;
     }
@@ -339,7 +301,7 @@ class GameManager {
   }
   public static async createGameAndConnectCreator(
     creatorId: number,
-    fieldSize: number,
+    fieldSize: number
   ): Promise<number> {
     return new Promise<number>(async (resolve, reject) => {
       const accessToken: string = GameManager.generateAccessToken();
@@ -354,7 +316,7 @@ class GameManager {
           await postgreSqlManager.games.create(newGameData);
           successCreation = true;
         } catch (error) {
-          logger.info(error.toString());// TODO: подумай что здесь должно выводиться
+          logger.info(error.toString());
         }
       }
       let searchGameData: DataForCreation = new Dictionary<string, any>();
@@ -437,13 +399,13 @@ class GameManager {
   }
   public static async redirectToStartScreen(playerId: number): Promise<void> {
     logger.info(
-      "Redirect player with id=" + playerId + " to start screen.",
+      "Redirect player with id=" + playerId + " to start screen."
     );
   }
   public static async sendGameReport(playerId: number, gameId: number): Promise<void> {
     logger.info(
       "Send game report with gameId=" + gameId
-      + " for player with id=" + playerId + ".",
+      + " for player with id=" + playerId + "."
     );
   }
 
@@ -456,53 +418,7 @@ class GameManager {
     logger.error(ERROR_GAME_MESSAGES.unknownSymbol);
     throw new Error(ERROR_GAME_MESSAGES.unknownSymbol);
   }
-  private static filledHorizontal(
-    field: string[],
-    playerSign: string,
-    position: MyPosition,
-  ): boolean {
-    let filledHorizontal: boolean = true;
-    for (let x: number = 0; x < field.length; x++) {
-      if (field[position.y][x] === playerSign) {
-        continue;
-      }
-      filledHorizontal = false;
-      break;
-    }
-    return filledHorizontal;
-  }
-  private static filledVertical(
-    field: string[],
-    playerSign: string,
-    position: MyPosition,
-  ): boolean {
-    let filledHorizontal: boolean = true;
-    for (let y: number = 0; y < field.length; y++) {
-      if (field[y][position.x] === playerSign) {
-        continue;
-      }
-      filledHorizontal = false;
-      break;
-    }
-    return filledHorizontal;
-  }
-  private static filledDiagonal(
-    field: string[],
-    playerSign: string,
-    position: MyPosition,
-    diagonalFunction: (x: number, position: MyPosition) => number,
-  ): boolean {
-    let filledDiagonal: boolean = true;
-    for (let x: number = 0; x < field.length; x++) {
-      const y: number = diagonalFunction(x, position);
-      if ((y >= 0) && (y < field.length) && (field[y][x] === playerSign)) {
-        continue;
-      }
-      filledDiagonal = false;
-      break;
-    }
-    return filledDiagonal;
-  }
+
   private static swapMoveLaw(game: Game) {
     if (game.leadingPlayerId === game.creatorGameId) {
       game.leadingPlayerId = game.participantId;
@@ -527,17 +443,6 @@ class GameManager {
   private static generateAccessToken(): string {
     return crypto.randomBytes(ACCESS_TOKEN_LENGTH).toString("hex");
   }
-  private static allCellFilled(game: Game) {
-    for (const row of game.field) {
-      for (const cell of row) {
-        if (cell === Cell.Empty) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
   public static setLoser(userId: number, gameId: number): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {
@@ -563,6 +468,5 @@ export {
   GameManager,
   PlayerRole,
   MyPosition,
-  ERROR_GAME_MESSAGES,
-  Cell,
+  ERROR_GAME_MESSAGES
 };

@@ -6,6 +6,7 @@ export interface IAuthLoginCreds {
 }
 
 export interface IAuthSignupCreds extends IAuthLoginCreds {
+    name: string;
     passwordConfirm: string;
 }
 
