@@ -5,7 +5,7 @@ import * as Promise from "bluebird";
 import {Error401, UnrecognizedStatusError} from "./request_errors";
 import {AUTH_TOKEN_LS_KEY} from "../../consts/auth";
 import {IDictionary} from "../interfaces/data";
-import {BACKEND_SERVER_ADDRESS} from "../../consts/server";
+import {BACKEND_SERVER_ADDRESS, FRONTEND_SERVER_ADDRESS} from "../../consts/server";
 
 const DEBUG = true;
 
@@ -22,19 +22,19 @@ export function request(method: RequestMethod , url: string, data?: IDictionary<
         "Accept": "application/json",
         "Content-Type": "application/json",
         "authorization": localStorage.getItem(AUTH_TOKEN_LS_KEY),
-        "Origin": BACKEND_SERVER_ADDRESS
+        "Origin": FRONTEND_SERVER_ADDRESS
     };
 
     let fetchOpts: RequestInit = {
         method: method,
-        headers: defaultHeaders
+        headers: defaultHeaders,
+        mode: "cors"
     };
 
-    if (data) { fetchOpts.body = JSON.stringify(data) }
+    if (data) { fetchOpts.body = JSON.stringify(data);}
     if (opts && opts.headers) { fetchOpts.headers = _.assign({}, fetchOpts.headers, opts.headers) }
 
-    if (DEBUG) { console.info("FETCH OPTS:",fetchOpts); }
-
+    if (DEBUG) { console.info("FETCH OPTS:", fetchOpts); }
     return Promise.resolve()
         .then(() => fetch(url, fetchOpts))
         .then((res: Response) => {
@@ -58,8 +58,13 @@ export function request(method: RequestMethod , url: string, data?: IDictionary<
     // });
 }
 
-export function apiGET(url: string, params?: any) {
-    const queryParams = '';
+export function apiGET(url: string, data: IDictionary<any>) {
+    let queryParams = "";
+    for (const key in data) {
+        if (data.hasOwnProperty(key)) {
+            queryParams += key + "=" + data[key];
+        }
+    }
     const urlWithParams = `${url}?${queryParams}`;
     return request("GET", urlWithParams);
 }

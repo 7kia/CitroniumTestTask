@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-import * as React from 'react';
-import {bindActionCreators, Dispatch as IDispatch} from 'redux';
-import {connect} from 'react-redux';
-import {RouteComponentProps as IRouteComponentProps} from 'react-router-dom';
-import {resetAuthForm, signupUser} from '../actions/auth';
-import SignupForm, {IFormData} from '../components/SignupForm';
-import {IStore} from '../../reducer';
-import {IAuthSignupCreds} from '../interfaces/auth';
+import * as React from "react";
+import {bindActionCreators, Dispatch as IDispatch} from "redux";
+import {connect} from "react-redux";
+import {RouteComponentProps as IRouteComponentProps} from "react-router-dom";
+import {resetAuthForm, signupUser} from "../actions/auth";
+import SignupForm, {IFormData} from "../components/SignupForm";
+import {IStore} from "../../reducer";
+import {IAuthSignupCreds} from "../interfaces/auth";
 
 
 interface IStateProps {
@@ -26,7 +26,7 @@ interface ISignupViewProps extends IStateProps, IActionProps, IOwnProps, IRouteC
     dispatch: IDispatch<IStore>;
 }
 
-// NOTE: logic is very similar to LoginView, I think but it's better to
+// NOTE: logic is very similar to LoginView, I think but it"s better to
 // keep them separated as business logic can differ in near future
 class SignupViewC extends React.Component<ISignupViewProps, {}> {
 
@@ -39,7 +39,7 @@ class SignupViewC extends React.Component<ISignupViewProps, {}> {
     };
 
     private onSuccess = () => {
-        this.props.history.push('/');
+        this.props.history.push("/");
     };
 
     public render(): JSX.Element {

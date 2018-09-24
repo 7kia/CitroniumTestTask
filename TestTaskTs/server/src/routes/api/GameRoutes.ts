@@ -1,14 +1,14 @@
 import * as express from "express";
 import {GameActions} from "../../DomainModel/actions/GameActions";
-
+import * as cors from "cors";
 const router = express.Router();
 
-router.use("/create", GameActions.createGame);
-router.use("/find", GameActions.findGames);
-router.use("/connect-user-to-game", GameActions.connectToGame);
-router.use("/get-user-incomplete-game", GameActions.getUserIncompleteGame);
-router.use("/set-loser", GameActions.setLoser);
-router.use("/get-game-report", GameActions.getGameReport);
-router.use("/take-player-move", GameActions.takePlayerMove);
-
+//add your routes
+router.post("/create", GameActions.createGame);
+router.get("/find", GameActions.findGames);
+router.post("/connect-user-to-game", GameActions.connectToGame);
+router.get("/get-user-incomplete-game", GameActions.getUserIncompleteGame);
+router.post("/set-loser", GameActions.setLoser);
+router.get("/get-game-report", GameActions.getGameReport);
+router.post("/take-player-move", GameActions.takePlayerMove);
 export default router;

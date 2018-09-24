@@ -5,7 +5,7 @@ import {IAction} from "../../common/interfaces/action";
 import {IAuthLoginCreds, IAuthResponse, IAuthSignupCreds} from "../interfaces/auth";
 import {IStore} from "../../reducer";
 import {apiPOST} from "../../common/helpers/request";
-import {AUTH_TOKEN_LS_KEY} from "../../consts/auth";
+import {AUTH_TOKEN_LS_KEY, USER_ID} from "../../consts/auth";
 import {createRequestActionTypes} from "../../common/helpers/actions";
 import {BACKEND_SERVER_ADDRESS} from "../../consts/server";
 import {Json} from "../../consts/types";
@@ -44,6 +44,7 @@ export const loginUser = (credentials: IAuthLoginCreds, onSuccess?: Function) =>
         dispatch<IAction>(authRequestSuccess);
         dispatch<IAction>(authenticateUser());
         localStorage.setItem(AUTH_TOKEN_LS_KEY, data.token);
+        localStorage.setItem(USER_ID, data.userId);
         if (onSuccess) {
           onSuccess(data);
         }
@@ -57,11 +58,16 @@ export const loginUser = (credentials: IAuthLoginCreds, onSuccess?: Function) =>
 
 export const logoutUser = (): IAction => {
   localStorage.removeItem(AUTH_TOKEN_LS_KEY);
+  localStorage.removeItem(USER_ID);
   return unauthenticateUser();
 };
 
-export const signupUser = ({ email, name, password }: IAuthSignupCreds, onSuccess?: Function) => {
+export const signupUser = (credentials: IAuthSignupCreds, onSuccess?: Function) => {
   return (dispatch: IDispatch<IStore>) => {
+    const email: string = credentials.email;
+    const password: string = credentials.password;
+    const name: string = credentials.name;
+
     dispatch<IAction>(authRequestStart);
 
     return apiPOST(BACKEND_SERVER_ADDRESS + "/api/auth/signUp/", {email, name, password})
@@ -73,10 +79,12 @@ export const signupUser = ({ email, name, password }: IAuthSignupCreds, onSucces
         dispatch<IAction>(authRequestSuccess);
         dispatch<IAction>(authenticateUser());
         localStorage.setItem(AUTH_TOKEN_LS_KEY, data.token);
+        localStorage.setItem(USER_ID, data.userId);
         if (onSuccess) {
           onSuccess(data);
         }
-      }      })
+      }
+    })
     .catch((error) => {
       dispatch<IAction>(authRequestError("Signup failed, try again"));
     });

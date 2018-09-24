@@ -27,7 +27,7 @@ export class AuthorizationActions {
       const password: string = req.body.password;
       try {
         if (await AuthorizationRules.canSignIn(email, password)) {
-          AuthorizationStrategies.authorize(email, res);
+          await AuthorizationStrategies.authorize(email, res);
         }
       } catch (error) {
         AuthorizationStrategies.sendAuthorizeError(res, error);

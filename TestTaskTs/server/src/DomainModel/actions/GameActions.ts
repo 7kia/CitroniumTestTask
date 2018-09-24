@@ -25,9 +25,9 @@ export class GameActions {
   }
   public static async findGames(req: Request, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
-      const creatorName: string = req.body.creatorName;
-      const participantName: string = req.body.participantName;
-      const size: number = req.body.size;
+      const creatorName: string = req.query.creatorName;
+      const participantName: string = req.query.participantName;
+      const size: number = req.query.size;
       try {
         if (await GameRules.checkSearchGameParameters(creatorName, participantName, size)) {
           await GameStrategies.findGames(req, res);
@@ -54,7 +54,7 @@ export class GameActions {
   }
   public static async getUserIncompleteGame(req: Request, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
-      const userId: number = req.body.userId;
+      const userId: number = parseInt(req.query.userId, 10);
       try {
         const incompleteGameId: number = await GameManager.getIncompleteGame(userId);
         if (incompleteGameId !== null) {
@@ -85,7 +85,7 @@ export class GameActions {
   }
   public static async getGameReport(req: Request, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
-      const gameId: number = req.body.gameId;
+      const gameId: number = req.query.gameId;
       try {
         if (await GameRules.existGame(gameId)) {
           await GameStrategies.returnGameReport(gameId, res);

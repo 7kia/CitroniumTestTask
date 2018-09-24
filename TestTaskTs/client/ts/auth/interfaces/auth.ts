@@ -1,5 +1,3 @@
-'use strict';
-
 export interface IAuthLoginCreds {
     email: string;
     password: string;

@@ -1,12 +1,12 @@
-'use strict';
+"use strict";
 
-import * as React from 'react';
-import {bindActionCreators, Dispatch as IDispatch} from 'redux';
-import {connect} from 'react-redux';
-import {RouteComponentProps as IRouteComponentProps} from 'react-router-dom';
-import {logoutUser} from '../actions/auth';
-import {IStore} from '../../reducer';
-
+import * as React from "react";
+import {bindActionCreators, Dispatch as IDispatch} from "redux";
+import {connect} from "react-redux";
+import {RouteComponentProps as IRouteComponentProps} from "react-router-dom";
+import {logoutUser} from "../actions/auth";
+import {IStore} from "../../reducer";
+import {Redirect} from "react-router";
 
 interface IStateProps {}
 
@@ -20,8 +20,9 @@ interface ILogoutViewProps extends IStateProps, IActionProps, IOwnProps, IRouteC
 
 class LogOutViewC extends React.Component<ILogoutViewProps, IStateProps> {
 
-    public componentWillUnmount(): void {
+    public componentDidMount(): void {
         this.props.logoutUser();
+        this.props.history.push("/login");
     }
 
     public render(): JSX.Element {
@@ -32,7 +33,6 @@ class LogOutViewC extends React.Component<ILogoutViewProps, IStateProps> {
         );
     }
 }
-
 
 function mapActionsToProps(dispatch: IDispatch<IStore>): IActionProps {
     return bindActionCreators({

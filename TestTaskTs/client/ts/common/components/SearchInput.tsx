@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-import * as React from 'react';
-import {FormControl, FormGroup, HelpBlock} from 'react-bootstrap';
+import * as React from "react";
+import {FormControl, FormGroup, HelpBlock} from "react-bootstrap";
 
 interface InputProps {
     id: string;

@@ -10,6 +10,7 @@ import {IStore} from '../reducer';
 import Header from '../common/components/Header';
 
 
+
 interface IStateProps {
     isUserAuthorized: boolean;
 }
@@ -26,7 +27,7 @@ class AppC extends React.Component<IAppProps, {}> {
 
     private renderContent(): JSX.Element {
         const { isUserAuthorized } = this.props;
-        return isUserAuthorized ? <LoggedInAppContainer/> : <LoggedOutAppContainer/>
+        return isUserAuthorized ? <LoggedInAppContainer/> : <LoggedOutAppContainer/>;
     }
 
     public render(): JSX.Element {

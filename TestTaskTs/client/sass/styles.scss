@@ -53,7 +53,7 @@ $fa-font-path: "~font-awesome/fonts/";
 @import "~font-awesome/scss/font-awesome";
 
 // CUSTOM STYLES
-
+@import "./partials/startPage";
 @import "./partials/helpers";
 @import "./partials/layout";
 @import "./partials/auth";

@@ -1,9 +1,8 @@
-'use strict';
+"use strict";
 
-import * as React from 'react';
-import {Nav, Navbar, NavItem} from 'react-bootstrap';
-import {LinkContainer} from 'react-router-bootstrap';
-
+import * as React from "react";
+import {Nav, Navbar, NavItem} from "react-bootstrap";
+import {LinkContainer} from "react-router-bootstrap";
 
 interface IStateProps {
     authenticated: boolean;
@@ -13,10 +12,10 @@ interface IActionProps {}
 
 interface IOwnProps {}
 
-interface IHeaderProps extends IStateProps, IActionProps, IOwnProps {}
+interface IHeaderProps extends IStateProps, IActionProps, IOwnProps {
+}
 
 class Header extends React.Component<IHeaderProps, {}> {
-
     private renderLinks(): JSX.Element {
         const { authenticated } = this.props;
 
@@ -58,7 +57,7 @@ class Header extends React.Component<IHeaderProps, {}> {
 
                 { this.renderLinks() }
             </Navbar>
-        )
+        );
     }
 }
 
