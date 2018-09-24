@@ -12,6 +12,7 @@ import {Json} from "../../consts/types";
 import {apiPOST} from "../../common/helpers/request";
 import {BACKEND_SERVER_ADDRESS} from "../../consts/server";
 import CreateGameWindow from "../components/CreateGameWindow";
+import {Button} from "react-bootstrap";
 
 interface IActionProps {
   getIncompleteGameUserId: typeof getIncompleteGameUserId;
@@ -41,11 +42,10 @@ class StartPageViewC extends React.Component<IStartPageViewProps, IStartPageView
 
   private setIncompleteGame = (data: Json) => {
     const gameData: Json = data;
-    console.log("data =" + gameData.id);
     this.setState({
       gameData,
     });
-    console.log("state =" + this.state);
+    console.log("state = " + JSON.stringify(gameData));
   };
 
   private togglePopup = () => {
@@ -55,20 +55,36 @@ class StartPageViewC extends React.Component<IStartPageViewProps, IStartPageView
     });
   };
 
-  public render(): JSX.Element {
+  private openSearchGamePage = () => {
+    this.props.history.push("/search-game");
+  };
 
+  private openGamePage = () => {
+    this.props.history.push("/games?id="  + this.state.gameData.id);
+  };
+
+  public render(): JSX.Element {
     return (
       <div className="start-page-container">
         {this.state.showCreateGameWindow ? <CreateGameWindow closePopup={this.togglePopup}/> : null}
-        <ul id="user-action-container">
-          <li><img src={"image/searchGame.png"} className="size200"/><a href="/search-game" /></li>
+        <ul className="user-action-container">
+          <li>
+            <img src={"image/searchGame.png"} className="size200"/>
+            <Button className="action-button" onClick={this.openSearchGamePage}>
+              Search game
+            </Button>
+          </li>
           <li>
             <img src={"image/createGame.png"} className="size200"/>
-            <button onClick={this.togglePopup}/>
+            <Button className="action-button" onClick={this.togglePopup}>
+              Create game
+            </Button>
           </li>
           <li>
             <img src={"image/continueGame.png"} className="size200"/>
-            {this.state.gameData.id !== undefined ? <a href={"/games?id=" + this.state.gameData.id}/> : null}
+            <Button className="action-button" onClick={this.openGamePage} disabled={this.state.gameData.id === null}>
+              Continue
+            </Button>
           </li>
         </ul>
       </div>

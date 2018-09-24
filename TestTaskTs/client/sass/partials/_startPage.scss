@@ -1,5 +1,17 @@
+.start-page-container {
+  margin: auto;
+}
+
 .user-action-container {
-  display: inline;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.user-action-container li {
+  float: left;
+  padding: 20px;
 }
 
 .size200 {
@@ -7,3 +19,8 @@
   height: 200px;
 }
 
+.action-button {
+  display: block;
+  margin: auto;
+  margin-top: 10px;
+}
