@@ -11,11 +11,9 @@ import {User} from "../../db/Entity/User";
 import {MyPosition} from "../../MyPosition";
 
 export class GameStrategies {
-  public static async createGame(req: Request, res: Response): Promise<void> {
+  public static async createGame(userId: number, size: number, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {
-        const userId: number = req.query.userId;
-        const size: number = req.query.size;
         const gameId: number = await GameManager.createGameAndConnectCreator(userId, size);
 
         const createdGame: Game = await GameManager.findGameById(gameId);

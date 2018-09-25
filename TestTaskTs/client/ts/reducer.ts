@@ -5,9 +5,11 @@ import {reducer as formReducer} from 'redux-form';
 import authReducer, {IAuthStore} from './auth/reducer';
 
 
+
 export interface IStore {
     form: any; // TODO: typing,
-    auth: IAuthStore
+    auth: IAuthStore;
+
 }
 
 const rootReducer = combineReducers({

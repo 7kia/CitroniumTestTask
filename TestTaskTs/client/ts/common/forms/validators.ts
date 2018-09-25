@@ -4,6 +4,7 @@ export const required = (value: any, msg: string = 'Field is required') => {
     return !value ? msg : '';
 };
 
+
 export const email = (email: string | undefined, msg: string = 'Invalid email') => {
     function validateEmail(email: string | undefined) {
         let re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;

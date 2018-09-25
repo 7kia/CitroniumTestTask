@@ -305,20 +305,18 @@ class GameManager {
   ): Promise<number> {
     return new Promise<number>(async (resolve, reject) => {
       const accessToken: string = GameManager.generateAccessToken();
-      let successCreation: boolean = false;
-      while (!successCreation) {
-        try {
-          let newGameData: DataForCreation = new Dictionary<string, any>();
-          newGameData.setValue("access_token", accessToken);
-          newGameData.setValue("leading_player_id", creatorId);
-          newGameData.setValue("field", GameManager.generateField(fieldSize));
+      try {
+        let newGameData: DataForCreation = new Dictionary<string, any>();
+        newGameData.setValue("access_token", accessToken);
+        newGameData.setValue("leading_player_id", creatorId);
+        newGameData.setValue("field", GameManager.generateField(fieldSize));
 
-          await postgreSqlManager.games.create(newGameData);
-          successCreation = true;
-        } catch (error) {
-          logger.info(error.toString());
-        }
+        await postgreSqlManager.games.create(newGameData);
+
+      } catch (error) {
+        logger.info(error.toString());
       }
+
       let searchGameData: DataForCreation = new Dictionary<string, any>();
       searchGameData.setValue("access_token", accessToken);
 

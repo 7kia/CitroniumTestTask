@@ -14,7 +14,7 @@ export class GameActions {
       const size: number = req.body.size;
       try {
         if (await GameRules.canCreateGame(userId, size)) {
-          await GameStrategies.createGame(req, res);
+          await GameStrategies.createGame(userId, size, res);
         }
       } catch (error) {
         GameStrategies.sendErrorMessage(res, error);

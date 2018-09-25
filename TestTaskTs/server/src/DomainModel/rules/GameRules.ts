@@ -105,11 +105,16 @@ class GameRules {
 
   public static async canCreateGame(userId: number, size: number): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
-      let foundUser: User = await GameManager.findUser(userId);
-      if (!GameRules.userPlay(foundUser)) {
-        reject(new Error("The user play in other game"));
+      try {
+        let foundUser: User = await GameManager.findUser(userId);
+        if (GameRules.userPlay(foundUser)) {
+          reject(new Error("The user play in other game"));
+        }
+        resolve(GameRules.validateSize(size));
+      } catch (error) {
+        reject(error);
       }
-      resolve(GameRules.validateSize(size));
+      resolve(false);
     });
   }
 
