@@ -1,0 +1,27 @@
+.start-page-container {
+  margin: auto;
+}
+
+.user-action-container {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.user-action-container li {
+  float: left;
+  padding: 20px;
+}
+
+.size200 {
+  width: 200px;
+  height: 200px;
+}
+
+.action-button {
+  display: block;
+  margin: auto;
+  margin-top: 10px;
+}
+
