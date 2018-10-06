@@ -47,7 +47,7 @@ export class GameStrategies {
         const data: string = await GameStrategies.generateGameListJson(foundGames);
         res.status(200).json(data);
       } catch (error) {
-        reject(error);
+        res.status(200).json("{}");
       }
       resolve();
     });
@@ -78,7 +78,7 @@ export class GameStrategies {
             participantId: game.participantId,
             size: game.fieldSize,
             time: game.time,
-            leadingPlayerId: game.leadingPlayerId,
+            winPlayerId: game.winPlayerId,
             gameState: game.gameState,
           });
         }

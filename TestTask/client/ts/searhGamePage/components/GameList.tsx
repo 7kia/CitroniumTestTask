@@ -8,42 +8,26 @@ interface IGameListProps {
     redirectToGame: (gameId: number) => void;
 }
 
-// class GameList extends React.Component<IGameListProps, {}> {
-//     constructor(props: IGameListProps) {
-//         super(props);
-//     }
-//
-//     private generateGameList(): JSX.Element[] {
-//       return this.props.games.map((game: IGameReport) => {
-//         return (
-//           <li>
-//             <GameItem game={game} key={game.id} redirectToGame={this.props.redirectToGame}/>
-//           </li>
-//         );
-//       });
-//     }
-//
-//     public render(): JSX.Element {
-//       return (
-//         <ul className="game-list">{this.generateGameList()}</ul>
-//       );
-//     }
-// }
+class GameList extends React.Component<IGameListProps, {}> {
+  constructor(props: IGameListProps) {
+      super(props);
+  }
 
-const GameList = (props: IGameListProps) => {
-  console.log("props.games");
-  console.log(props.games);
-  const gameList: JSX.Element[] = map(props.games, (game: IGameReport) => {
+  private generateGameList(): JSX.Element[] {
+    return map(this.props.games, (game: IGameReport) => {
+      return (
+        <li>
+          <GameItem game={game} key={game.id} redirectToGame={this.props.redirectToGame}/>
+        </li>
+      );
+    });
+  }
+
+  public render(): JSX.Element {
     return (
-      <li>
-        <GameItem game={game} key={game.id} redirectToGame={props.redirectToGame}/>
-      </li>
+      <ul className="game-list">{this.generateGameList()}</ul>
     );
-  });
-
-  return (
-    <ul className="game-list">{gameList}</ul>
-  );
-};
+  }
+}
 
 export default GameList;

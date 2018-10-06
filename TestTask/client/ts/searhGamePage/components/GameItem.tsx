@@ -21,6 +21,7 @@ class GameItem extends React.Component<IGameItemProps, {}> {
   private renderPlayButton(): JSX.Element {
     return (
       <Button
+        className="mt-md"
         bsStyle="success"
         bsSize="lg"
         onClick={this.redirectToGame}
@@ -33,6 +34,7 @@ class GameItem extends React.Component<IGameItemProps, {}> {
   private renderObserveButton(): JSX.Element {
     return (
       <Button
+        className="mt-md"
         bsStyle="primary"
         bsSize="lg"
         onClick={this.redirectToGame}
@@ -54,7 +56,7 @@ class GameItem extends React.Component<IGameItemProps, {}> {
     return (
       <div className="game-item">
         <GameReport gameReport={this.props.game}/>
-        <div className="buttons">
+        <div className="buttons tac">
           {canParticipant ? this.renderPlayButton() : this.renderObserveButton()}
         </div>
       </div>

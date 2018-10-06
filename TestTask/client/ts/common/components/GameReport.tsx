@@ -10,18 +10,18 @@ class GameReport extends React.Component<IGameReportProps, {}> {
     super(props);
   }
 
-  private static playerIsMove(userId: number, leadingPlayerId: number): boolean {
-    return (userId === leadingPlayerId);
+  private static playerIsWinner(userId: number, winPlayerId: number): boolean {
+    return (userId === winPlayerId);
   }
 
-  private static renderNameMovePlayer(name: string): JSX.Element {
+  private static renderWinnerPlayerName(name: string): JSX.Element {
     return (
-      <b>{name}</b>
+      <b><u>{name}</u></b>
     );
   }
   private static renderNamePlayer(name: string): JSX.Element {
     return (
-      <b><u>{name}</u></b>
+      <b>{name}</b>
     );
   }
   public render(): JSX.Element {
@@ -30,20 +30,22 @@ class GameReport extends React.Component<IGameReportProps, {}> {
       <div className="game-report">
         <div className="creator-name">
           {
-            GameReport.playerIsMove(gameReport.creatorId, gameReport.leadingPlayerId)
-            ? GameReport.renderNameMovePlayer(gameReport.creatorName)
+            GameReport.playerIsWinner(gameReport.creatorId, gameReport.winPlayerId)
+            ? GameReport.renderWinnerPlayerName(gameReport.creatorName)
             : GameReport.renderNamePlayer(gameReport.creatorName)
           }
         </div>
         <div className="participant-name">
           {
-            GameReport.playerIsMove(gameReport.participantId, gameReport.leadingPlayerId)
-            ? GameReport.renderNameMovePlayer(gameReport.participantName)
+            GameReport.playerIsWinner(gameReport.participantId, gameReport.winPlayerId)
+            ? GameReport.renderWinnerPlayerName(gameReport.participantName)
             : GameReport.renderNamePlayer(gameReport.participantName)
           }
         </div>
-        <div className="game-time">
-          {gameReport.time / 1000}
+        <div>
+          <div className="game-time tac">
+            {gameReport.time / 1000 / 60}:{gameReport.time / 1000}
+          </div>
         </div>
       </div>
     );

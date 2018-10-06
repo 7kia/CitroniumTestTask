@@ -9,6 +9,6 @@ export interface IGameReport {
   participantId: number;
   size: number;
   time: number;
-  leadingPlayerId: number;
+  winPlayerId: number;
   gameState: number;
 }

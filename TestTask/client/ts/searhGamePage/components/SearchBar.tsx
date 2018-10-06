@@ -21,74 +21,81 @@ interface ISearchBarState {
 }
 
 class SearchGameBar extends React.Component<ISearchBarProps, ISearchBarState> {
+  constructor(props: ISearchBarProps) {
+    super(props);
 
-    constructor(props: ISearchBarProps) {
-        super(props);
-
-        this.state = {
-            creatorName: "",
-            participantName: "",
-            size: ""
-        };
-    }
-
-    private onCreatorNameChange = (e: React.FormEvent<any>) => {
-        const target = (e as any).target;
-        const value = target.type === "checkbox" ? target.checked : target.value;
-        this.setState({ creatorName: value });
+    this.state = {
+      creatorName: "",
+      participantName: "",
+      size: "",
     };
-    private onParticipantNameChange = (e: React.FormEvent<any>) => {
-        const target = (e as any).target;
-        const value = target.type === "checkbox" ? target.checked : target.value;
-        this.setState({ participantName: value });
-    };
-    private onSizeChange = (e: React.FormEvent<any>) => {
-        const target = (e as any).target;
-        const value = target.type === "checkbox" ? target.checked : target.value;
-        this.setState({ size: value });
-    };
+  }
 
-    private sendSearchGameData = () =>  {
-        const searchData: ISearchGameData = {
-            creatorName: this.state.creatorName,
-            participantName: this.state.participantName,
-            size: parseInt(this.state.size, 10)
-        };
-        this.props.onGameSearch(searchData, this.props.updateGameList);
-    };
+  private onCreatorNameChange = (e: React.FormEvent<any>) => {
+    const target = (e as any).target;
+    const value = target.type === "checkbox" ? target.checked : target.value;
+    this.setState({ creatorName: value });
+  };
+  private onParticipantNameChange = (e: React.FormEvent<any>) => {
+    const target = (e as any).target;
+    const value = target.type === "checkbox" ? target.checked : target.value;
+    this.setState({ participantName: value });
+  };
+  private onSizeChange = (e: React.FormEvent<any>) => {
+    const target = (e as any).target;
+    const value = target.type === "checkbox" ? target.checked : target.value;
+    this.setState({ size: value });
+  };
 
-    public render(): JSX.Element {
-        return (
-            <div className="search-bar">
-                <SearchInput
-                    id="search-bar-creator-name"
-                    placeholder="Creator name"
-                    onChange={this.onCreatorNameChange}
-                    value={this.state.creatorName}
-                />
-                <SearchInput
-                  id="search-bar-participant-name"
-                  placeholder="Participant name"
-                  onChange={this.onParticipantNameChange}
-                  value={this.state.participantName}
-                />
-                <SearchInput
-                  id="search-bar-size"
-                  placeholder="Size"
-                  onChange={this.onSizeChange}
-                  value={this.state.size}
-                />
-                <Button
-                  className=""
-                  bsStyle="primary"
-                  bsSize="lg"
-                  onClick={this.sendSearchGameData}
-                >
-                    Search
-                </Button>
-            </div>
-        );
-    }
+  private sendSearchGameData: () => void = () =>  {
+    const searchData: ISearchGameData = {
+      creatorName: this.state.creatorName,
+      participantName: this.state.participantName,
+      size: parseInt(this.state.size, 10),
+    };
+    this.props.onGameSearch(searchData, this.props.updateGameList);
+  };
+
+  public render(): JSX.Element {
+    return (
+      <ul className="search-bar">
+        <li>
+          <SearchInput
+            id="search-bar-creator-name"
+            placeholder="Creator name"
+            onChange={this.onCreatorNameChange}
+            value={this.state.creatorName}
+          />
+        </li>
+        <li>
+          <SearchInput
+            id="search-bar-participant-name"
+            placeholder="Participant name"
+            onChange={this.onParticipantNameChange}
+            value={this.state.participantName}
+          />
+        </li>
+        <li>
+          <SearchInput
+            id="search-bar-size"
+            placeholder="Size"
+            onChange={this.onSizeChange}
+            value={this.state.size}
+          />
+        </li>
+        <li>
+          <Button
+            className=""
+            bsStyle="primary"
+            bsSize="lg"
+            onClick={this.sendSearchGameData}
+          >
+              Search
+          </Button>
+        </li>
+      </ul>
+    );
+  }
 }
 
 export default SearchGameBar;
