@@ -94,12 +94,12 @@ class UserRepository extends Repository {
           logger.error(error);
           reject(error);
         });
-        resolve();
+      resolve();
     });
   }
 }
 
 export {
   UserRepository,
-  DataForCreation
+  DataForCreation,
 };

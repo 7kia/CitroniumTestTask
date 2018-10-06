@@ -12,7 +12,7 @@ import appReducer from "./reducer";
 // configure store
 const composeEnhancers = (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 const store = createStore(appReducer, composeEnhancers(
-    applyMiddleware(thunk)
+    applyMiddleware(thunk),
 ));
 
 const render = (Component: any) => {
@@ -20,7 +20,7 @@ const render = (Component: any) => {
         <AppContainer>
             <Component store={store}/>
         </AppContainer>,
-        document.getElementById("root")
+        document.getElementById("root"),
     );
 };
 

@@ -69,7 +69,7 @@ class GameRepository extends Repository {
         logger.error("Error to INSERT queue.");
         logger.error(error);
         reject(error);
-      })
+      });
       resolve();
     });
   }
@@ -112,5 +112,5 @@ class GameRepository extends Repository {
 
 export {
   GameRepository,
-  DataForCreation
+  DataForCreation,
 };

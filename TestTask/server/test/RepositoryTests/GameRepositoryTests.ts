@@ -31,7 +31,7 @@ describe("GameDataRepository. " +
     try {
       await testFunc();
     } catch (error) {
-      func = () => {throw error};
+      func = () => {throw error;};
     } finally {
       assert.throws(func, regExp);
     }
@@ -59,7 +59,7 @@ describe("GameDataRepository. " +
         async () => {
           await postgreSqlManager.games.find(gameData);
         },
-        Error
+        Error,
       );
     });
   });

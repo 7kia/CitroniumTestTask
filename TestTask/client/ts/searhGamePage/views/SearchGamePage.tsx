@@ -6,11 +6,11 @@ import {RouteComponentProps as IRouteComponentProps} from "react-router-dom";
 import {bindActionCreators, Dispatch as IDispatch} from "redux";
 import {IStore} from "../../reducer";
 import {connect} from "react-redux";
-import {DataList, IGameReport, MyDictionary} from "../../consts/types";
 import {searchGame} from "../actions/games";
 import SearchGameBar from "../components/SearchBar";
 import GameList from "../components/GameList";
 import {Col, Grid, Row} from "react-bootstrap";
+import {IGameReport} from "../../common/interfaces/gameReport";
 
 interface IActionProps {
   searchGame: typeof searchGame;
@@ -30,7 +30,7 @@ class SearchGameC extends React.Component<ISearchGameViewProps, ISearchGameViewS
     super(props);
 
     this.state = {
-      games: []
+      games: [],
     };
   }
 
@@ -38,37 +38,40 @@ class SearchGameC extends React.Component<ISearchGameViewProps, ISearchGameViewS
     this.setState({games});
   };
 
-  private redirectToGame: (gameId: number) => void = (gameId: number) => {
+  private redirectToGame: (gameId: number) => void  = (gameId: number) => {
     this.props.history.push("/games?id=" + gameId);
   };
 
   public render(): JSX.Element {
     return (
-        <div>
-          <SearchGameBar
-            onGameSearch={this.props.searchGame}
-            updateGameList={this.updateGameList}
-          />
-
-          <Grid className="pv-xxxl h100"> 
-            <Row>
-              <Col md={8}>
-              </Col>
-              <Col md={4}>
-                <GameList games={this.state.games} redirectToGame={this.redirectToGame}/>
-              </Col>
-            </Row>
-          </Grid>
-        </div>
+      <div className="search-game-page">
+        <SearchGameBar
+          onGameSearch={this.props.searchGame}
+          updateGameList={this.updateGameList}
+        />
+        <Grid className="pv-xxxl h100">
+          <Row>
+            <Col md={4}>
+              <GameList
+                games={this.state.games}
+                redirectToGame={this.redirectToGame}
+              />
+            </Col>
+          </Row>
+        </Grid>
+      </div>
 
     );
   }
 }
 
 function mapActionsToProps(dispatch: IDispatch<IStore>): IActionProps {
-  return bindActionCreators({
-    searchGame
-  }, dispatch);
+  return bindActionCreators(
+    {
+      searchGame,
+    },
+    dispatch,
+  );
 }
 
 const SearchGameView = connect(undefined, mapActionsToProps)(SearchGameC);

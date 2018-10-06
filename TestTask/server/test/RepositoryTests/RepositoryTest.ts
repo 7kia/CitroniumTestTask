@@ -8,61 +8,61 @@ import {User} from "../../src/db/Entity/User";
 import {DataForCreation} from "../../src/Helpers";
 import * as Collections from "typescript-collections";
 
-
 describe("Класс Repository. " +
-    "Основа для всех репозиториев. Содержит в себе соединение с PostgreSQL и " +
-    "общие для всех репозиториев операции.", () => {
-  const data: DataForCreation = new Collections.Dictionary<string, any>();
-  data.setValue("id", 1);
-  const data2: DataForCreation = new Collections.Dictionary<string, any>();
-  data2.setValue("id", 2);
-  data2.setValue("name", "Player1");
-  data2.setValue("email", "e@e.com");
-  data2.setValue("password", null);
-  describe("Может генерировать строки с данными для запроса.", () => {
-    it("Может генерировать строку критерий поиска.", () => {
-      assert.strictEqual(
-        Repository.generateCriteriaString(data),
-        "id='1'",
-      );
-      assert.strictEqual(
-        Repository.generateCriteriaString(data2),
-        "id='2' and name='Player1' and email='e@e.com' and password=null",
-      );
+  "Основа для всех репозиториев. Содержит в себе соединение с PostgreSQL и " +
+  "общие для всех репозиториев операции.",
+         () => {
+    const data: DataForCreation = new Collections.Dictionary<string, any>();
+    data.setValue("id", 1);
+    const data2: DataForCreation = new Collections.Dictionary<string, any>();
+    data2.setValue("id", 2);
+    data2.setValue("name", "Player1");
+    data2.setValue("email", "e@e.com");
+    data2.setValue("password", null);
+    describe("Может генерировать строки с данными для запроса.", () => {
+      it("Может генерировать строку критерий поиска.", () => {
+        assert.strictEqual(
+          Repository.generateCriteriaString(data),
+          "id='1'",
+        );
+        assert.strictEqual(
+          Repository.generateCriteriaString(data2),
+          "id='2' and name='Player1' and email='e@e.com' and password=null",
+        );
+      });
+      it("Может генерировать строку с данными для обновления.", () => {
+        assert.strictEqual(
+          Repository.generateNewDataString(data),
+          "id='1'",
+        );
+        assert.strictEqual(
+          Repository.generateNewDataString(data2),
+          "id='2', name='Player1', email='e@e.com', password=null",
+        );
+      });
+      it("Может генерировать строку со свойствами.", () => {
+        assert.strictEqual(
+          Repository.generatePropertyString(data),
+          "id",
+        );
+        assert.strictEqual(
+          Repository.generatePropertyString(data2),
+          "id, name, email, password",
+        );
+      });
+      it("Может генерировать строку со значениями для запроса добавления.", () => {
+        assert.strictEqual(
+          Repository.generateValueString(data),
+          "'1'",
+        );
+        assert.strictEqual(
+          Repository.generateValueString(data2),
+          "'2', 'Player1', 'e@e.com', null",
+        );
+      });
     });
-    it("Может генерировать строку с данными для обновления.", () => {
-      assert.strictEqual(
-        Repository.generateNewDataString(data),
-        "id='1'",
-      );
-      assert.strictEqual(
-        Repository.generateNewDataString(data2),
-        "id='2', name='Player1', email='e@e.com', password=null",
-      );
-    });
-    it("Может генерировать строку со свойствами.", () => {
-      assert.strictEqual(
-        Repository.generatePropertyString(data),
-        "id",
-      );
-      assert.strictEqual(
-        Repository.generatePropertyString(data2),
-        "id, name, email, password",
-      );
-    });
-    it("Может генерировать строку со значениями для запроса добавления.", () => {
-      assert.strictEqual(
-        Repository.generateValueString(data),
-        "'1'",
-      );
-      assert.strictEqual(
-        Repository.generateValueString(data2),
-        "'2', 'Player1', 'e@e.com', null",
-      );
-    });
-  });
 
-  describe("Может генерировать строку запроса.", () => {
+    describe("Может генерировать строку запроса.", () => {
     it("Может генерировать строку c SELECT запросом.", () => {
       assert.strictEqual(
         Repository.getSelectQueueString("User", data),
@@ -77,7 +77,7 @@ describe("Класс Repository. " +
         "WHERE id='2' and name='Player1' and email='e@e.com' and password=null",
       );
   });
-  it("Может генерировать строку с INSERT запросом.", () => {
+    it("Может генерировать строку с INSERT запросом.", () => {
     assert.strictEqual(
       Repository.getInsertQueueString("User", data),
       "INSERT INTO public.\"User\"(id)"
@@ -113,4 +113,5 @@ describe("Класс Repository. " +
       );
     });
   });
-});
+  },
+);

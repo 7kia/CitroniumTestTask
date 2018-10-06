@@ -9,6 +9,7 @@ import {postgreSqlManager} from "../../db/index";
 import {Game} from "../../db/Entity/Game";
 import {User} from "../../db/Entity/User";
 import {MyPosition} from "../../MyPosition";
+import {logger} from "../../Logger";
 
 export class GameStrategies {
   public static async createGame(userId: number, size: number, res: Response): Promise<void> {
@@ -36,14 +37,15 @@ export class GameStrategies {
 
         let foundGames: Game[] = null;
         if (participantName && !creatorName) {
-          let foundGames: Game[] = await GameManager.getGame(null, participantName, null);
+          foundGames = await GameManager.getGames(null, participantName, null);
           if (!foundGames) {
-            foundGames = await GameManager.getGame(creatorName, null, null);
+            foundGames = await GameManager.getGames(creatorName, null, null);
           }
         } else {
-          foundGames = await GameManager.getGame(creatorName, participantName, size);
+          foundGames = await GameManager.getGames(creatorName, participantName, size);
         }
-        res.status(200).json(GameStrategies.generateGameListJson(foundGames));
+        const data: string = await GameStrategies.generateGameListJson(foundGames);
+        res.status(200).json(data);
       } catch (error) {
         reject(error);
       }
@@ -52,26 +54,47 @@ export class GameStrategies {
   }
   public static sendErrorMessage(res: Response, error: Error) {
     res.status(400).json({message: error.message});
+    logger.info(error.message);
   }
-  private static generateGameListJson(games: Game[]): string {
-    let json: Array<{}> = [];
-    for (const game of games) {
-      json.push({
-        gameId: game.id,
-        creatorId: game.creatorGameId,
-        participantId: game.participantId,
-        size: game.fieldSize,
-        gameTime: game.time,
-        gameState: game.gameState
-      });
-    }
-    return JSON.stringify(json);
+  private static generateGameListJson(games: Game[]): Promise<string> {
+    return new Promise<string>(async (resolve, reject) => {
+      try {
+        let json: Array<{}> = [];
+        for (const game of games) {
+          const creator: User = await GameManager.findUser(game.creatorGameId);
+          let participantName: string = null;
+          try {
+            const participant: User = await GameManager.findUser(game.participantId);
+            participantName = participant.name;
+          } catch (error) {
+
+          }
+
+          json.push({
+            id: game.id,
+            creatorName: creator.name,
+            participantName: participantName,
+            creatorId: game.creatorGameId,
+            participantId: game.participantId,
+            size: game.fieldSize,
+            time: game.time,
+            leadingPlayerId: game.leadingPlayerId,
+            gameState: game.gameState,
+          });
+        }
+        resolve(JSON.stringify(json));
+
+      } catch (error) {
+        reject(error);
+      }
+      resolve(null);
+    });
   }
 
   public static async connectToGame(
     userId: number,
     gameId: number,
-    res: Response
+    res: Response,
   ): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {
@@ -109,11 +132,10 @@ export class GameStrategies {
       try {
         const game: Game = await GameManager.findGameById(gameId);
         const creator: User = await GameManager.findUser(game.creatorGameId);
-        let participantName: string = null;
+        let participant: User = null;
         if (game.participantId) {
           try {
-            const participant: User = await GameManager.findUser(game.participantId);
-            participantName = participant.name;
+             participant = await GameManager.findUser(game.participantId);
           } catch (error) {
             reject(new Error("In game with id = " + game.id + " not found participant"));
           }
@@ -122,10 +144,12 @@ export class GameStrategies {
         res.status(200).json({
           id: game.id,
           creatorName: creator.name,
-          participantName: participantName,
+          participantName: participant.name,
+          creatorId: creator.id,
+          participantId: participant.id,
           time: game.time,
           leadingPlayerId: game.leadingPlayerId,
-          winPlayerId: game.winPlayerId
+          gameState: game.gameState,
         });
       } catch (error) {
         reject(error);
@@ -141,7 +165,7 @@ export class GameStrategies {
   public static setLoser(
     userId: number,
     gameId: number,
-    res: Response
+    res: Response,
   ): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {
@@ -158,7 +182,7 @@ export class GameStrategies {
     position: MyPosition,
     userId: number,
     gameId: number,
-    res: Response
+    res: Response,
   ): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {

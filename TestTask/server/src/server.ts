@@ -10,13 +10,11 @@ import * as flash from "express-flash";
 import * as path from "path";
 import * as clear from "clear-console";
 import * as chalk from "chalk";
-import * as cors from "cors";
 import expressValidator = require("express-validator");
-// API Routes imports
+
 import authRoutes from "./routes/api/AuthRoutes";
 import gameRoutes from "./routes/api/GameRoutes";
 
-import {NODE_SERVER_URL, REACT_SERVER_URL} from "./routes/constants";
 import {NextFunction, Request, Response} from "express";
 
 if (process.env.NODE_ENV !== "production") {
@@ -38,12 +36,11 @@ app.use(expressValidator());
 app.use(session({
   resave: true,
   saveUninitialized: true,
-  secret: "secret"// process.env.SESSION_SECRET
+  secret: "secret", // process.env.SESSION_SECRET
 }));
 app.use(flash());
 app.use(lusca.xframe("SAMEORIGIN"));
 app.use(lusca.xssProtection(true));
-
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -60,10 +57,9 @@ if (process.env.NODE_ENV === "production") {
   app.use("/libs", express.static(path.join(__dirname, "..", "dist-react", "libs"), {maxAge: 31557600000}));
   app.use("/static", express.static(path.join(__dirname, "..", "dist-react", "static"), {maxAge: 31557600000}));
   app.get("*", (req, res) => res.sendFile(path.join(__dirname, "..", "dist-react", "index.html")));
+} else {
+  app.get("/:url", (req, res) => (res.redirect("http://localhost:3001/" + req.params.url)));
 }
-// } else {
-//   app.get("/:url", (req, res) => (res.redirect("http://localhost:3001/" + req.params.url)));
-// }
 
 app.use(errorHandler());
 

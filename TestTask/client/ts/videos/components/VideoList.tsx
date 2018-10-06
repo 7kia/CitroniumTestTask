@@ -1,10 +1,10 @@
-'use strict';
+"use strict";
 
-import * as React from 'react';
-import {map} from 'lodash';
-import {ListGroup} from 'react-bootstrap';
-import VideoItem from './VideoListItem';
-import {IVideoItem} from '../utils/yt_api_types';
+import * as React from "react";
+import {map} from "lodash";
+import {ListGroup} from "react-bootstrap";
+import VideoItem from "./VideoListItem";
+import {IVideoItem} from "../utils/yt_api_types";
 
 interface IVideoListProps {
     videos: IVideoItem[];

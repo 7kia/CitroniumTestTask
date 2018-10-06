@@ -6,10 +6,10 @@ import {IStore} from "../../reducer";
 import {IAction} from "../../common/interfaces/action";
 import {createRequestActionTypes} from "../../common/helpers/actions";
 import {BACKEND_SERVER_ADDRESS} from "../../consts/server";
-import {apiGET, apiPOST} from "../../common/helpers/request";
-import {DataList, IGameReport, Json, MyDictionary} from "../../consts/types";
+import {apiGET} from "../../common/helpers/request";
+import {Json, MyDictionary} from "../../consts/types";
 import {ISearchGameData} from "../interfaces/searchGame";
-import {Dictionary} from "lodash";
+import {IGameReport} from "../../common/interfaces/gameReport";
 
 export const gameFormSubmitActionTypes = createRequestActionTypes("games/CREATE_GAME_FORM_SUBMIT");
 
@@ -17,7 +17,7 @@ export const gameRequestStart: IAction = { type: gameFormSubmitActionTypes.start
 export const gameRequestSuccess: IAction = { type: gameFormSubmitActionTypes.success };
 export const gameRequestError = (error: string): IAction => ({
   type: gameFormSubmitActionTypes.error,
-  payload: error
+  payload: error,
 });
 
 export const searchGame = (gameData: ISearchGameData, updateGameList: Function) => {

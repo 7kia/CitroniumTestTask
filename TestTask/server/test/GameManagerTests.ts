@@ -1,7 +1,4 @@
 /**
- * Created by Илья on 22.08.2018.
- */
-/**
  * Created by Илья on 11.08.2018.
  */
 import { assert } from "chai";
@@ -28,7 +25,7 @@ describe("GameManager. " +
     try {
       await testFunc();
     } catch (error) {
-      func = () => {throw error};
+      func = () => {throw error; };
     } finally {
       assert.throws(func, regExp);
     }
@@ -45,42 +42,43 @@ describe("GameManager. " +
   };
 
   it("Позволяет найти игровую партию по имени игроков создателей " +
-    "и участников, и по размеру поля.", async () => {
-    const gameData: {[id: string]: any} = {
-      creator_name: "Player2",
-      participant_name: "Player3",
-      field_size: 3,
-    };
+    "и участников, и по размеру поля.",
+     async () => {
+      const gameData: {[id: string]: any} = {
+        creator_name: "Player2",
+        participant_name: "Player3",
+        field_size: 3,
+      };
 
-    const games: Game[] = await GameManager.getGame("Player0", null, null);
-    const games2: Game[] = await GameManager.getGame(null, gameData.participant_name, null);
-    const games3: Game[] = await GameManager.getGame(null, null, gameData.field_size);
-    const games4: Game[] = await GameManager.getGame(
-      gameData.creator_name,
-      gameData.participant_name,
-      null,
-    );
-    const games5: Game[] = await GameManager.getGame(
-      gameData.creator_name,
-      gameData.participant_name,
-      gameData.field_size,
-    );
+      const games: Game[] = await GameManager.getGames("Player0", null, null);
+      const games2: Game[] = await GameManager.getGames(null, gameData.participant_name, null);
+      const games3: Game[] = await GameManager.getGames(null, null, gameData.field_size);
+      const games4: Game[] = await GameManager.getGames(
+        gameData.creator_name,
+        gameData.participant_name,
+        null,
+      );
+      const games5: Game[] = await GameManager.getGames(
+        gameData.creator_name,
+        gameData.participant_name,
+        gameData.field_size,
+      );
 
-    assert.strictEqual(games.length, 1);
-    assert.strictEqual(games2.length, 1);
-    assert.strictEqual(games3.length, 2);
-    assert.strictEqual(games4.length, 1);
-    assert.strictEqual(games5.length, 1);
+      assert.strictEqual(games.length, 1);
+      assert.strictEqual(games2.length, 1);
+      assert.strictEqual(games3.length, 2);
+      assert.strictEqual(games4.length, 1);
+      assert.strictEqual(games5.length, 1);
 
-    assert.strictEqual(games[0].id, 0);
-    assert.strictEqual(games2[0].id, 1);
+      assert.strictEqual(games[0].id, 0);
+      assert.strictEqual(games2[0].id, 1);
 
-    const expectedIds: number[] = [0, 1];
-    assert.isTrue(expectedIds.indexOf(games3[0].id) > -1);
-    assert.isTrue(expectedIds.indexOf(games3[1].id) > -1);
+      const expectedIds: number[] = [0, 1];
+      assert.isTrue(expectedIds.indexOf(games3[0].id) > -1);
+      assert.isTrue(expectedIds.indexOf(games3[1].id) > -1);
 
-    assert.strictEqual(games4[0].id, 1);
-    assert.strictEqual(games5[0].id, 1);
+      assert.strictEqual(games4[0].id, 1);
+      assert.strictEqual(games5[0].id, 1);
   });
 
   it("Игрок может отсутствовать в игре не более 5 минут.", async () => {
@@ -97,33 +95,35 @@ describe("GameManager. " +
       assert.strictEqual(role1, PlayerRole.Participant);
     });
     it("Игрок может быть наблюдателем, если не участвует в этой " +
-      "партии.", async () => {
-      const role1: PlayerRole = await GameManager.getRoleToGame(2, 0);
-      const role2: PlayerRole = await GameManager.getRoleToGame(3, 0);
-      assert.strictEqual(role1, PlayerRole.Observer);
-      assert.strictEqual(role2, PlayerRole.Observer);
+      "партии.",
+       async () => {
+        const role1: PlayerRole = await GameManager.getRoleToGame(2, 0);
+        const role2: PlayerRole = await GameManager.getRoleToGame(3, 0);
+        assert.strictEqual(role1, PlayerRole.Observer);
+        assert.strictEqual(role2, PlayerRole.Observer);
     });
 
   });
   it("Может определить: станет ли этот игрок участником в этой " +
-    "партии.", async () => {
+    "партии.",
+     async () => {
+        let userData: DataForCreation = new Dictionary<string, any>();
+        userData.setValue("name", "PlayerNeww");
+        userData.setValue("email", "eNew2.e@com");
+        userData.setValue("password", "sdf");
 
-    let userData: DataForCreation = new Dictionary<string, any>();
-    userData.setValue("name", "PlayerNeww");
-    userData.setValue("email", "eNew2.e@com");
-    userData.setValue("password", "sdf");
+        await deleteUserIfExist(userData);
+        await postgreSqlManager.users.create(userData);
+        const user: User = await postgreSqlManager.users.find(userData);
+        const willParticipantToGame0: boolean = await GameRules.canStandParticipant(user.id, 0);
+        const willParticipantToGame1: boolean = await GameRules.canStandParticipant(user.id, 1);
 
-    await deleteUserIfExist(userData);
-    await postgreSqlManager.users.create(userData);
-    const user: User = await postgreSqlManager.users.find(userData);
-    const willParticipantToGame0: boolean = await GameRules.canStandParticipant(user.id, 0);
-    const willParticipantToGame1: boolean = await GameRules.canStandParticipant(user.id, 1);
+        assert.strictEqual(willParticipantToGame0, true);
+        assert.strictEqual(willParticipantToGame1, false);
 
-    assert.strictEqual(willParticipantToGame0, true);
-    assert.strictEqual(willParticipantToGame1, false);
-
-    await postgreSqlManager.users.deleteUser(userData);
-  });
+        await postgreSqlManager.users.deleteUser(userData);
+    },
+  );
   it("Может подключить игрока к партии.", async () => {
     let gameData: DataForCreation = new Dictionary<string, any>();
     gameData.setValue("field_size", 3);
@@ -175,7 +175,6 @@ describe("GameManager. " +
     await postgreSqlManager.games.deleteGame(gameData);
     await postgreSqlManager.users.deleteUser(creatorData);
     await postgreSqlManager.users.deleteUser(participantData);
-
   });
   it("Может дать время игровой партии.", async () => {
     const gameTime: number = await GameManager.getGameTime(0);
@@ -228,6 +227,8 @@ describe("GameManager. " +
         leadingPlayerId = participant.id;
         break;
       }
+      default:
+        break;
     }
     gameData.setValue("leading_player_id", leadingPlayerId);
 
@@ -350,86 +351,90 @@ describe("GameManager. " +
       describe("Если ход корректный.", async () => {
         it("Если игрок сходил в пустую клетку, то ставится знак " +
           "игрока и право хода передаётся другому игроку, " +
-          "если сходивший игрок не выиграл. ", async () => {
-          let creatorData: DataForCreation = new Dictionary<string, any>();
-          creatorData.setValue("name", "CreatorTestMove_EmptyCellAndNoWinner");
-          creatorData.setValue("email", "CreatorTestMove_EmptyCellAndNoWinner@e.com");
-          let participantData: DataForCreation = new Dictionary<string, any>();
-          participantData.setValue("name", "ParticipantTestMove_EmptyCellAndNoWinner");
-          participantData.setValue("email", "ParticipantTestMove_EmptyCellAndNoWinner@e.com");
-          let gameData: DataForCreation = new Dictionary<string, any>();
-          gameData.setValue("field_size", 3);
-          gameData.setValue("field", ["???", "???", "???"]);
-          gameData.setValue("access_token", "CreatorTestMove_EmptyCellAndNoWinner");
-          gameData.setValue("time", 10);
+          "если сходивший игрок не выиграл. ",
+           async () => {
+            let creatorData: DataForCreation = new Dictionary<string, any>();
+            creatorData.setValue("name", "CreatorTestMove_EmptyCellAndNoWinner");
+            creatorData.setValue("email", "CreatorTestMove_EmptyCellAndNoWinner@e.com");
+            let participantData: DataForCreation = new Dictionary<string, any>();
+            participantData.setValue("name", "ParticipantTestMove_EmptyCellAndNoWinner");
+            participantData.setValue("email", "ParticipantTestMove_EmptyCellAndNoWinner@e.com");
+            let gameData: DataForCreation = new Dictionary<string, any>();
+            gameData.setValue("field_size", 3);
+            gameData.setValue("field", ["???", "???", "???"]);
+            gameData.setValue("access_token", "CreatorTestMove_EmptyCellAndNoWinner");
+            gameData.setValue("time", 10);
 
-          let searchGameData: DataForCreation = new Dictionary<string, any>();
-          searchGameData.setValue("access_token", gameData.getValue("access_token"));
+            let searchGameData: DataForCreation = new Dictionary<string, any>();
+            searchGameData.setValue("access_token", gameData.getValue("access_token"));
 
-          await testPlayerMoveToGame(
-            creatorData,
-            participantData,
-            gameData,
-            async (creator: User, participant: User, game: Game): Promise<void> => {
-              await GameManager.takePlayerMove(creator.id, new MyPosition(2, 1), game.id);
-              let foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
-              game = foundGames[0];
-              assert.deepEqual(game.field, ["???", "??X", "???"]);
-              assert.strictEqual(game.gameState, GameState.NoWinner);
-              assert.strictEqual(game.winPlayerId, null);
-              assert.strictEqual(game.leadingPlayerId, participant.id);
+            await testPlayerMoveToGame(
+              creatorData,
+              participantData,
+              gameData,
+              async (creator: User, participant: User, game: Game): Promise<void> => {
+                await GameManager.takePlayerMove(creator.id, new MyPosition(2, 1), game.id);
+                let foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
+                game = foundGames[0];
+                assert.deepEqual(game.field, ["???", "??X", "???"]);
+                assert.strictEqual(game.gameState, GameState.NoWinner);
+                assert.strictEqual(game.winPlayerId, null);
+                assert.strictEqual(game.leadingPlayerId, participant.id);
 
-              await GameManager.takePlayerMove(participant.id, new MyPosition(1, 1), game.id);
-              foundGames = await postgreSqlManager.games.find(searchGameData);
-              game = foundGames[0];
-              assert.deepEqual(game.field, ["???", "?0X", "???"]);
-              assert.strictEqual(game.gameState, GameState.NoWinner);
-              assert.strictEqual(game.winPlayerId, null);
-              assert.strictEqual(game.leadingPlayerId, creator.id);
-            },
-            WhoMove.Creator,
-          );
-        });
+                await GameManager.takePlayerMove(participant.id, new MyPosition(1, 1), game.id);
+                foundGames = await postgreSqlManager.games.find(searchGameData);
+                game = foundGames[0];
+                assert.deepEqual(game.field, ["???", "?0X", "???"]);
+                assert.strictEqual(game.gameState, GameState.NoWinner);
+                assert.strictEqual(game.winPlayerId, null);
+                assert.strictEqual(game.leadingPlayerId, creator.id);
+              },
+              WhoMove.Creator,
+            );
+          },
+        );
         it("Если после хода игрок выиграл, то он отмечается как победитель " +
-          "и последующие ходы не принимаются.", async () => {
-          let creatorData: DataForCreation = new Dictionary<string, any>();
-          creatorData.setValue("name", "CreatorTestMove_EmptyCellAndFoundWinner");
-          creatorData.setValue("email", "CreatorTestMove_EmptyCellAndFoundWinner@e.com");
-          let participantData: DataForCreation = new Dictionary<string, any>();
-          participantData.setValue("name", "ParticipantTestMove_EmptyCellAndFoundWinner");
-          participantData.setValue("email", "ParticipantTestMove_EmptyCellAndFoundWinner@e.com");
-          let gameData: DataForCreation = new Dictionary<string, any>();
-          gameData.setValue("field_size", 3);
-          gameData.setValue("field", ["XX?", "00?", "???"]);
-          gameData.setValue("access_token", "CreatorTestMove_EmptyCellAndFoundWinner");
-          gameData.setValue("time", 10);
+          "и последующие ходы не принимаются.",
+           async () => {
+              let creatorData: DataForCreation = new Dictionary<string, any>();
+              creatorData.setValue("name", "CreatorTestMove_EmptyCellAndFoundWinner");
+              creatorData.setValue("email", "CreatorTestMove_EmptyCellAndFoundWinner@e.com");
+              let participantData: DataForCreation = new Dictionary<string, any>();
+              participantData.setValue("name", "ParticipantTestMove_EmptyCellAndFoundWinner");
+              participantData.setValue("email", "ParticipantTestMove_EmptyCellAndFoundWinner@e.com");
+              let gameData: DataForCreation = new Dictionary<string, any>();
+              gameData.setValue("field_size", 3);
+              gameData.setValue("field", ["XX?", "00?", "???"]);
+              gameData.setValue("access_token", "CreatorTestMove_EmptyCellAndFoundWinner");
+              gameData.setValue("time", 10);
 
-          let searchGameData: DataForCreation = new Dictionary<string, any>();
-          searchGameData.setValue("access_token", gameData.getValue("access_token"));
+              let searchGameData: DataForCreation = new Dictionary<string, any>();
+              searchGameData.setValue("access_token", gameData.getValue("access_token"));
 
-          await testPlayerMoveToGame(
-            creatorData,
-            participantData,
-            gameData,
-            async (creator: User, participant: User, game: Game): Promise<void> => {
-              const newField: string[] = ["XXX", gameData.getValue("field")[1], gameData.getValue("field")[2]];
-              await GameManager.takePlayerMove(creator.id, new MyPosition(2, 0), game.id);
+              await testPlayerMoveToGame(
+                creatorData,
+                participantData,
+                gameData,
+                async (creator: User, participant: User, game: Game): Promise<void> => {
+                  const newField: string[] = ["XXX", gameData.getValue("field")[1], gameData.getValue("field")[2]];
+                  await GameManager.takePlayerMove(creator.id, new MyPosition(2, 0), game.id);
 
-              const foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
-              game = foundGames[0];
-              assert.deepEqual(game.field, newField);
-              assert.strictEqual(game.gameState, GameState.CreatorWin);
-              assert.strictEqual(game.winPlayerId, creator.id);
-              assert.strictEqual(game.leadingPlayerId, creator.id);
+                  const foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
+                  game = foundGames[0];
+                  assert.deepEqual(game.field, newField);
+                  assert.strictEqual(game.gameState, GameState.CreatorWin);
+                  assert.strictEqual(game.winPlayerId, creator.id);
+                  assert.strictEqual(game.leadingPlayerId, creator.id);
 
-              await assertThrowsAsync(
-                async () => GameManager.takePlayerMove(participant.id, new MyPosition(2, 2), game.id),
-                ERROR_GAME_MESSAGES.gameEnd
+                  await assertThrowsAsync(
+                    async () => GameManager.takePlayerMove(participant.id, new MyPosition(2, 2), game.id),
+                    ERROR_GAME_MESSAGES.gameEnd,
+                  );
+                },
+                WhoMove.Creator,
               );
             },
-            WhoMove.Creator
-          );
-        });
+        );
         it("Когда игрок ходит фиксируется время последнего хода.", async () => {
           let creatorData: DataForCreation = new Dictionary<string, any>();
           creatorData.setValue("name", "CreatorTestMove_FixLastMoveTime");
@@ -458,24 +463,70 @@ describe("GameManager. " +
               game = foundGames[0];
               assert.strictEqual(game.lastMoveTime, gameData.getValue("time"));
             },
-            WhoMove.Creator
+            WhoMove.Creator,
           );
         });
         it("Если после хода игрока все клетки заполнены и никто не выиграл, " +
-          "то объявляется ничья. Дальнейшие ходы не принимаются", async () => {
+          "то объявляется ничья. Дальнейшие ходы не принимаются",
+           async () => {
+            let creatorData: DataForCreation = new Dictionary<string, any>();
+            creatorData.setValue("name", "CreatorTestMove_EmptyCellAndDraw");
+            creatorData.setValue("email", "CreatorTestMove_EmptyCellAndDraw@e.com");
+            let participantData: DataForCreation = new Dictionary<string, any>();
+            participantData.setValue("name", "ParticipantTestMove_EmptyCellAndDraw");
+            participantData.setValue("email", "ParticipantTestMove_EmptyCellAndDraw@e.com");
+            let gameData: DataForCreation = new Dictionary<string, any>();
+            gameData.setValue("field_size", 3);
+            gameData.setValue("field", [
+              "X0X",
+              "X0X",
+              "0?0"]);
+            gameData.setValue("access_token", "CreatorTestMove_EmptyCellAndDraw");
+            gameData.setValue("time", 10);
+
+            let searchGameData: DataForCreation = new Dictionary<string, any>();
+            searchGameData.setValue("access_token", gameData.getValue("access_token"));
+
+            await testPlayerMoveToGame(
+              creatorData,
+              participantData,
+              gameData,
+              async (creator: User, participant: User, game: Game): Promise<void> => {
+                await GameManager.takePlayerMove(creator.id, new MyPosition(1, 2), game.id);
+                let foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
+                game = foundGames[0];
+                assert.deepEqual(game.field, [
+                  gameData.getValue("field")[0],
+                  gameData.getValue("field")[1],
+                  "0X0"],
+                );
+                assert.strictEqual(game.gameState, GameState.Draw);
+                assert.strictEqual(game.winPlayerId, null);
+
+                await assertThrowsAsync(
+                  async () => GameManager.takePlayerMove(participant.id, new MyPosition(2, 2), game.id),
+                  ERROR_GAME_MESSAGES.gameEnd,
+                );
+              },
+              WhoMove.Creator,
+            );
+          },
+        );
+      });
+
+      it("Если игрок сходил когда должен ходить другой " +
+        "игрок, то будет брошено исключение.",
+         async () => {
           let creatorData: DataForCreation = new Dictionary<string, any>();
-          creatorData.setValue("name", "CreatorTestMove_EmptyCellAndDraw");
-          creatorData.setValue("email", "CreatorTestMove_EmptyCellAndDraw@e.com");
+          creatorData.setValue("name", "CreatorTestMove_MoveNotHaveRightMove");
+          creatorData.setValue("email", "CreatorTestMove_MoveNotHaveRightMove@e.com");
           let participantData: DataForCreation = new Dictionary<string, any>();
-          participantData.setValue("name", "ParticipantTestMove_EmptyCellAndDraw");
-          participantData.setValue("email", "ParticipantTestMove_EmptyCellAndDraw@e.com");
+          participantData.setValue("name", "ParticipantTestMove_MoveNotHaveRightMove");
+          participantData.setValue("email", "ParticipantTestMove_MoveNotHaveRightMove@e.com");
           let gameData: DataForCreation = new Dictionary<string, any>();
           gameData.setValue("field_size", 3);
-          gameData.setValue("field", [
-            "X0X",
-            "X0X",
-            "0?0"]);
-          gameData.setValue("access_token", "CreatorTestMove_EmptyCellAndDraw");
+          gameData.setValue("field", ["XX?", "00?", "???"]);
+          gameData.setValue("access_token", "CreatorTestMove_MoveNotHaveRightMove");
           gameData.setValue("time", 10);
 
           let searchGameData: DataForCreation = new Dictionary<string, any>();
@@ -486,64 +537,22 @@ describe("GameManager. " +
             participantData,
             gameData,
             async (creator: User, participant: User, game: Game): Promise<void> => {
-              await GameManager.takePlayerMove(creator.id, new MyPosition(1, 2), game.id);
-              let foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
-              game = foundGames[0];
-              assert.deepEqual(game.field, [
-                gameData.getValue("field")[0],
-                gameData.getValue("field")[1],
-                "0X0"]
-              );
-              assert.strictEqual(game.gameState, GameState.Draw);
-              assert.strictEqual(game.winPlayerId, null);
-
               await assertThrowsAsync(
-                async () => GameManager.takePlayerMove(participant.id, new MyPosition(2, 2), game.id),
-                ERROR_GAME_MESSAGES.gameEnd
+                async () => await GameManager.takePlayerMove(participant.id, new MyPosition(2, 0), game.id),
+                ERROR_GAME_MESSAGES.moveAnotherPlayer,
               );
+
+              const foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
+              game = foundGames[0];
+              assert.deepEqual(game.field, gameData.getValue("field"));
+              assert.strictEqual(game.gameState, GameState.NoWinner);
+              assert.strictEqual(game.winPlayerId, null);
+              assert.strictEqual(game.leadingPlayerId, creator.id);
             },
-            WhoMove.Creator
+            WhoMove.Creator,
           );
-        });
-      });
-
-      it("Если игрок сходил когда должен ходить другой " +
-        "игрок, то будет брошено исключение.", async () => {
-        let creatorData: DataForCreation = new Dictionary<string, any>();
-        creatorData.setValue("name", "CreatorTestMove_MoveNotHaveRightMove");
-        creatorData.setValue("email", "CreatorTestMove_MoveNotHaveRightMove@e.com");
-        let participantData: DataForCreation = new Dictionary<string, any>();
-        participantData.setValue("name", "ParticipantTestMove_MoveNotHaveRightMove");
-        participantData.setValue("email", "ParticipantTestMove_MoveNotHaveRightMove@e.com");
-        let gameData: DataForCreation = new Dictionary<string, any>();
-        gameData.setValue("field_size", 3);
-        gameData.setValue("field", ["XX?", "00?", "???"]);
-        gameData.setValue("access_token", "CreatorTestMove_MoveNotHaveRightMove");
-        gameData.setValue("time", 10);
-
-        let searchGameData: DataForCreation = new Dictionary<string, any>();
-        searchGameData.setValue("access_token", gameData.getValue("access_token"));
-
-        await testPlayerMoveToGame(
-          creatorData,
-          participantData,
-          gameData,
-          async (creator: User, participant: User, game: Game): Promise<void> => {
-            await assertThrowsAsync(
-              async () => await GameManager.takePlayerMove(participant.id, new MyPosition(2, 0), game.id),
-              ERROR_GAME_MESSAGES.moveAnotherPlayer,
-            );
-
-            const foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
-            game = foundGames[0];
-            assert.deepEqual(game.field, gameData.getValue("field"));
-            assert.strictEqual(game.gameState, GameState.NoWinner);
-            assert.strictEqual(game.winPlayerId, null);
-            assert.strictEqual(game.leadingPlayerId, creator.id);
-          },
-          WhoMove.Creator,
-        );
-      });
+        },
+      );
     });
     describe("Если игрок не участвует в этой партии.", async () => {
       it("Ему нельзя ходить, будет брошено исключение.", async () => {
@@ -608,7 +617,7 @@ describe("GameManager. " +
         game.leadingPlayerId = data.getValue("leading_player_id");
         game.field = data.getValue("field");
         game.fieldSize = data.getValue("field_size");
-        const winnerId: number = GameManager.findWinner(game, data.getValue("position"));
+        const winnerId: number = GameRules.findWinner(game, data.getValue("position"));
         assert.strictEqual(winnerId, data.getValue("winner_id"));
       }
     };
@@ -741,7 +750,7 @@ describe("GameManager. " +
       let testData2: DataForCreation = new Dictionary<string, any>();
       testData2.setValue("leading_player_id", gameData.getValue("participant_id"));
       testData2.setValue("field",
-        [
+                         [
           "?0??",
           "??0?",
           "???0",
@@ -754,7 +763,7 @@ describe("GameManager. " +
       let testData3: DataForCreation = new Dictionary<string, any>();
       testData3.setValue("leading_player_id", gameData.getValue("creator_game_id"));
       testData3.setValue("field",
-        [
+                         [
           "????",
           "???X",
           "??X?",

@@ -28,7 +28,7 @@ describe("UserRepository. " +
     try {
       await testFunc();
     } catch (error) {
-      func = () => {throw error};
+      func = () => {throw error;};
     } finally {
       assert.throws(func, regExp);
     }
@@ -65,7 +65,7 @@ describe("UserRepository. " +
       async () => {
         await postgreSqlManager.users.find( userData );
       },
-      Error
+      Error,
     );
   });
   it("Можно обновить данные пользователя.", async () => {

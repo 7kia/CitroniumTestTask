@@ -12,13 +12,13 @@ import {MyPosition} from "../../MyPosition";
 const Cell: {[id: string]: string} = {
   Empty: "?",
   Cross: "X",
-  Zero: "0"
+  Zero: "0",
 };
 
 enum PlayerRole {
   Creator = 1,
   Participant,
-  Observer
+  Observer,
 }
 
 class GameRules {
@@ -35,7 +35,7 @@ class GameRules {
 
   public static async canStandParticipant(
     playerId: number,
-    gameId: number
+    gameId: number,
   ): Promise<boolean> {
     let searchGameData: DataForCreation = new Dictionary<string, any>();
     searchGameData.setValue("id", gameId);
@@ -53,6 +53,26 @@ class GameRules {
       }
     }
     return Promise.resolve(false);
+  }
+
+  public static findWinner(game: Game, position: MyPosition): number {
+    const playerSign: string = GameManager.getLeadingPlayerSign(game);
+    const firstDiagonalFunc: (x: number, pos: MyPosition) => number
+      = (x: number, pos: MyPosition) => {
+      return (x - pos.x) + pos.y;
+    };
+    const secondDiagonalFunc: (x: number, pos: MyPosition) => number
+      = (x: number, pos: MyPosition) => {
+      return pos.y - (x - pos.x);
+    };
+    if (GameRules.filledHorizontal(game.field, playerSign, position)
+      || GameRules.filledVertical(game.field, playerSign, position)
+      || GameRules.filledDiagonal(game.field, playerSign, position, firstDiagonalFunc)
+      || GameRules.filledDiagonal(game.field, playerSign, position, secondDiagonalFunc)
+    ) {
+      return game.leadingPlayerId;
+    }
+    return GameManager.NO_WINNER;
   }
 
   public static filledHorizontal(
@@ -121,7 +141,7 @@ class GameRules {
   public static async checkSearchGameParameters(
     creatorName: string,
     participantName: string,
-    size: number
+    size: number,
   ): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       if (creatorName || participantName || size) {
@@ -216,7 +236,7 @@ class GameRules {
   public static async positionNotOutFiled(
     column: number,
     row: number,
-    gameId: number
+    gameId: number,
   ): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       try {
@@ -237,5 +257,5 @@ class GameRules {
 export {
   GameRules,
   PlayerRole,
-  Cell
+  Cell,
 };

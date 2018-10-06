@@ -8,7 +8,7 @@ enum GameState {
   NoWinner = 0,
   CreatorWin,
   ParticipantWin,
-  Draw
+  Draw,
 }
 
 class Game {
@@ -40,12 +40,11 @@ class Game {
   public getReport(): GameReport {
     return new GameReport(this);
   }
-
 }
 
 export {
   Game,
   GameReport,
-  GameState
+  GameState,
 };
 

@@ -14,19 +14,18 @@ import {MyPosition} from "./MyPosition";
 import {Repository} from "./db/repositories/Repository";
 import {Cell, GameRules, PlayerRole} from "./DomainModel/rules/GameRules";
 
-const GAME_MESSAGES: {[id: string]: string} = {
-  yourMove: "Your move"
-};
-
 const ACCESS_TOKEN_LENGTH: number = 10;
-
+const GAME_MESSAGES: {[id: string]: string} = {
+  yourMove: "Your move",
+};
 const ERROR_GAME_MESSAGES: {[id: string]: string} = {
   unknownSymbol: "Unknown symbol",
   tokenNotCorrespond: "Access token not correspond.",
   moveAnotherPlayer: "Now move another player.",
   gameEnd: "Game end.",
-  thisCellFilled: "Player move to filled cell."
+  thisCellFilled: "Player move to filled cell.",
 };
+const WAIT_TIME: number = 500;
 
 class GameManager {
   public static get NO_WINNER(): number {
@@ -35,10 +34,10 @@ class GameManager {
   public static get MAX_INACTIVE_TIME(): number {
     return moment.duration(5, "m").asMilliseconds();
   }
-  public static async getGame(
+  public static async getGames(
     creatorName: string,
     participantName: string,
-    fieldSize: number
+    fieldSize: number,
   ): Promise<Game[]> {
     try {
       let searchData: DataForCreation = new Dictionary<string, any>();
@@ -68,7 +67,7 @@ class GameManager {
   }
   public static async getRoleToGame(
     playerId: number,
-    gameId: number
+    gameId: number,
   ): Promise<PlayerRole> {
     let searchGameData: DataForCreation = new Dictionary<string, any>();
     searchGameData.setValue("id", gameId);
@@ -90,30 +89,37 @@ class GameManager {
   }
 
   public static async connectPlayer(playerId: number, gameId: number): Promise<boolean> {
-    const willParticipant: boolean = await GameRules.canStandParticipant(playerId, gameId);
-    let gameSearchData: DataForCreation = new Dictionary<string, any>();
-    gameSearchData.setValue("id", gameId);
-    let userSearchData: DataForCreation = new Dictionary<string, any>();
-    userSearchData.setValue("id", playerId);
+    return new Promise<boolean>(async (resolve, reject) => {
+      try {
+        const willParticipant: boolean = await GameRules.canStandParticipant(playerId, gameId);
+        let gameSearchData: DataForCreation = new Dictionary<string, any>();
+        gameSearchData.setValue("id", gameId);
+        let userSearchData: DataForCreation = new Dictionary<string, any>();
+        userSearchData.setValue("id", playerId);
 
-    const foundGames: Game[] = await postgreSqlManager.games.find(gameSearchData);
-    const game: Game = foundGames[0];
-    const user: User = await postgreSqlManager.users.find(userSearchData);
-    if (willParticipant) {
-      let newGameData: DataForCreation = new Dictionary<string, any>();
-      let newUserData: DataForCreation = new Dictionary<string, any>();
+        const foundGames: Game[] = await postgreSqlManager.games.find(gameSearchData);
+        const game: Game = foundGames[0];
+        const user: User = await postgreSqlManager.users.find(userSearchData);
+        if (willParticipant) {
+          let newGameData: DataForCreation = new Dictionary<string, any>();
+          let newUserData: DataForCreation = new Dictionary<string, any>();
 
-      if (game.creatorGameId !== null) {
-        newGameData.setValue("participant_id", playerId);
-      } else {
-        newGameData.setValue("creator_game_id", playerId);
+          if (game.creatorGameId !== null) {
+            newGameData.setValue("participant_id", playerId);
+          } else {
+            newGameData.setValue("creator_game_id", playerId);
+          }
+          newUserData.setValue("access_token", game.accessToken);
+
+          await postgreSqlManager.games.update(game.id, newGameData);
+          await postgreSqlManager.users.update(user.id, newUserData);
+        }
+        return resolve(willParticipant);
+      } catch (error) {
+        reject(error);
       }
-      newUserData.setValue("access_token", game.accessToken);
+    });
 
-      await postgreSqlManager.games.update(game.id, newGameData);
-      await postgreSqlManager.users.update(user.id, newUserData);
-    }
-    return Promise.resolve(willParticipant);
   }
   public static async unconnectPlayer(playerId: number): Promise<void> {
     let userData: DataForCreation = new Dictionary<string, any>();
@@ -194,7 +200,7 @@ class GameManager {
   public static async takePlayerMove(
     playerId: number,
     position: MyPosition,
-    gameId: number
+    gameId: number,
   ): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       let gameSearchData: DataForCreation = new Dictionary<string, any>();
@@ -219,22 +225,14 @@ class GameManager {
           newGameData.setValue("field", game.field);
           newGameData.setValue("last_move_time", game.time);
 
-          const winnerId: number = GameManager.findWinner(game, position);
-          if (winnerId !== GameManager.NO_WINNER) {
-            GameManager.signWinner(newGameData, winnerId, game.creatorGameId);
-          } else if (GameRules.allCellFilled(game)) {
-            newGameData.setValue("game_state", GameState.Draw);
-          } else {
-            GameManager.swapMoveLaw(game);
-            newGameData.setValue("leading_player_id", game.leadingPlayerId);
-            await GameManager.sendMessage(game.leadingPlayerId, GAME_MESSAGES.yourMove);
-          }
+          const winnerId: number = GameRules.findWinner(game, position);
+          await GameManager.setGameState(winnerId, game, newGameData);
           await postgreSqlManager.games.update(game.id, newGameData);
         } else {
           logger.error(
             ERROR_GAME_MESSAGES.thisCellFilled
             + "Game with id=" + game.id
-            + ",player with id=" + player.id
+            + ",player with id=" + player.id,
           );
           reject(new Error(ERROR_GAME_MESSAGES.thisCellFilled));
         }
@@ -244,17 +242,39 @@ class GameManager {
       let errorMessage: string = GameManager.setErrorMessage(
         correspondToken,
         thisPlayerMove,
-        endGame
+        endGame,
       );
       logger.error(errorMessage);
       reject(new Error(errorMessage));
+    });
+  }
+  private static setGameState(
+    winnerId: number,
+    game: Game,
+    newGameData: DataForCreation,
+  ): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        if (winnerId !== GameManager.NO_WINNER) {
+          GameManager.signWinner(newGameData, winnerId, game.creatorGameId);
+        } else if (GameRules.allCellFilled(game)) {
+          newGameData.setValue("game_state", GameState.Draw);
+        } else {
+          GameManager.swapMoveLaw(game);
+          newGameData.setValue("leading_player_id", game.leadingPlayerId);
+          await GameManager.sendMessage(game.leadingPlayerId, GAME_MESSAGES.yourMove);
+        }
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 
   private static setErrorMessage(
     correspondToken: boolean,
     thisPlayerMove: boolean,
-    endGame: boolean
+    endGame: boolean,
   ): string {
     let errorMessage: string = "";
     if (!correspondToken) {
@@ -272,7 +292,7 @@ class GameManager {
   private static signWinner(
     newGameData: DataForCreation,
     winnerId: number,
-    creatorGameId: number
+    creatorGameId: number,
   ) {
     newGameData.setValue("win_player_id", winnerId);
     if (winnerId === creatorGameId) {
@@ -282,26 +302,9 @@ class GameManager {
     }
   }
 
-  public static findWinner(game: Game, position: MyPosition): number {
-    const playerSign: string = GameManager.getLeadingPlayerSign(game);
-    const firstDiagonalFunc: (x: number, pos: MyPosition) => number = (x: number, pos: MyPosition) => {
-      return (x - pos.x) + pos.y;
-    };
-    const secondDiagonalFunc: (x: number, pos: MyPosition) => number = (x: number, pos: MyPosition) => {
-      return pos.y - (x - pos.x);
-    };
-    if (GameRules.filledHorizontal(game.field, playerSign, position)
-      || GameRules.filledVertical(game.field, playerSign, position)
-      || GameRules.filledDiagonal(game.field, playerSign, position, firstDiagonalFunc)
-      || GameRules.filledDiagonal(game.field, playerSign, position, secondDiagonalFunc)
-    ) {
-      return game.leadingPlayerId;
-    }
-    return GameManager.NO_WINNER;
-  }
   public static async createGameAndConnectCreator(
     creatorId: number,
-    fieldSize: number
+    fieldSize: number,
   ): Promise<number> {
     return new Promise<number>(async (resolve, reject) => {
       const accessToken: string = GameManager.generateAccessToken();
@@ -342,13 +345,13 @@ class GameManager {
           newGameData.setValue("time", 0);
           newGameData.setValue("last_move_time", 0);
 
-          postgreSqlManager.games.update(game.id, newGameData);
+          await postgreSqlManager.games.update(game.id, newGameData);
           logger.info("Player with id=" + game.participantId + " stand participant " +
             "to game with id=" + gameId + ".");
           participantConnect = true;
         }
 
-        Parallel.sleep(500);
+        await Parallel.sleep(WAIT_TIME);
       }
 
       resolve(participantConnect);
@@ -368,8 +371,8 @@ class GameManager {
       game = foundGames[0];
 
       if (game.winPlayerId) {
-        GameManager.sendGameReport(game.creatorGameId, game.id);
-        GameManager.sendGameReport(game.participantId, game.id);
+        await GameManager.sendGameReport(game.creatorGameId, game.id);
+        await GameManager.sendGameReport(game.participantId, game.id);
         gameEnd = true;
       } else {
         game.time = Date.now() - startTime;
@@ -379,8 +382,7 @@ class GameManager {
         await postgreSqlManager.games.update(game.id, newGameData);
 
         if ((game.time - game.lastMoveTime) < GameManager.MAX_INACTIVE_TIME) {
-          Parallel.sleep(500);
-          continue;
+          await Parallel.sleep(500);
         } else {
           gameEnd = true;
         }
@@ -397,13 +399,13 @@ class GameManager {
   }
   public static async redirectToStartScreen(playerId: number): Promise<void> {
     logger.info(
-      "Redirect player with id=" + playerId + " to start screen."
+      "Redirect player with id=" + playerId + " to start screen.",
     );
   }
   public static async sendGameReport(playerId: number, gameId: number): Promise<void> {
     logger.info(
       "Send game report with gameId=" + gameId
-      + " for player with id=" + playerId + "."
+      + " for player with id=" + playerId + ".",
     );
   }
 
@@ -466,5 +468,5 @@ export {
   GameManager,
   PlayerRole,
   MyPosition,
-  ERROR_GAME_MESSAGES
+  ERROR_GAME_MESSAGES,
 };

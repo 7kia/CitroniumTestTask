@@ -15,7 +15,7 @@ class Helpers {
   public static between (
     value: number,
     startRange: number,
-    endRange: number
+    endRange: number,
   ): boolean {
     return (startRange <= value) && (value <= endRange);
   }
