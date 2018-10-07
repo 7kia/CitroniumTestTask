@@ -7,6 +7,7 @@ router.get("/find", GameActions.findGames);
 router.post("/connect-user-to-game", GameActions.connectToGame);
 router.get("/get-user-incomplete-game", GameActions.getUserIncompleteGame);
 router.post("/set-loser", GameActions.setLoser);
+router.get("/get", GameActions.getGame);
 router.get("/get-game-report", GameActions.getGameReport);
 router.post("/take-player-move", GameActions.takePlayerMove);
 

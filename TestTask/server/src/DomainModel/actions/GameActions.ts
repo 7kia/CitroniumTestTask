@@ -49,6 +49,7 @@ export class GameActions {
       resolve();
     });
   }
+
   public static async connectToGame(req: Request, res: Response): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       const userId: number = req.body.userId;
@@ -118,6 +119,21 @@ export class GameActions {
       }
       logger.info("Report send");
       resolve();
+    });
+  }
+
+  public static async getGame(req: Request, res: Response): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        const gameId: number = req.query.gameId;
+        logger.info("Get game. GameId=" + gameId);
+        if (await GameRules.existGame(gameId)) {
+          await GameStrategies.getGame(gameId, res);
+        }
+      } catch (error) {
+        GameStrategies.sendErrorMessage(res, error);
+      }
+      logger.info("Get game request successful");
     });
   }
 

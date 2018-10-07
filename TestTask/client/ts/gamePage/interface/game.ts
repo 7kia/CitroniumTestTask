@@ -3,12 +3,14 @@
  */
 export interface IGame {
   id: number;
+  creatorName: string;
+  participantName: string;
   creatorGameId: number;
   participantId: number;
-  fieldSize: number;
-  field: string[];
+  size: number;
   time: number;
   leadingPlayerId: number;
   winPlayerId: number;
   gameState: number;
+  field: string[];
 }

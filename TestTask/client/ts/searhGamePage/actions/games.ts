@@ -20,7 +20,7 @@ export const gameRequestError = (error: string): IAction => ({
   payload: error,
 });
 
-export const searchGame = (gameData: ISearchGameData, updateGameList: Function) => {
+export const searchGames = (gameData: ISearchGameData, updateGameList: Function) => {
   return (dispatch: IDispatch<IStore>) => {
       dispatch<IAction>(gameRequestStart);
 
@@ -38,7 +38,7 @@ export const searchGame = (gameData: ISearchGameData, updateGameList: Function) 
           }
         })
         .catch((err: any) => {
-          dispatch<IAction>(gameRequestError("Error to searchGame"));
+          dispatch<IAction>(gameRequestError("Error to searchGames"));
         });
   };
 };

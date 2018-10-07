@@ -48,10 +48,11 @@ class GameItem extends React.Component<IGameItemProps, {}> {
     const userId: number = parseInt(localStorage.getItem(USER_ID) as string, 10);
     const creatorId: number = this.props.game.creatorId;
     const participantId: number = this.props.game.participantId;
+    const userPlayToGame: boolean = (userId === creatorId) || (userId === participantId);
+    const gameHaveParticipant: boolean = (participantId !== null);
     const canParticipant: boolean = (
-      (userId === creatorId)
-      || (userId === participantId)
-      || (participantId === null)
+      (userPlayToGame)
+      || (!userPlayToGame && !gameHaveParticipant)
     );
     return (
       <div className="game-item">

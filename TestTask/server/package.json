@@ -103,11 +103,11 @@
     ]
   },
   "scripts": {
-    "start": "concurrently -k -p \"[{name}]\" -n \"Type,Node\" -c \"cyan.bold,green.bold\" \"npm run watch-ts\" \"nodemon build/server.js -q\" --kill-others",
+    "start": "concurrently -k -p \"[{name}]\" -n \"Type,Node\" -c \"cyan.bold,green.bold\" \"npm run watch-ts\" \"nodemon build/server/src/server.js -q\" --kill-others",
     "build": "npm run clean && npm run build-ts",
     "clean": "rimraf build",
     "build-ts": "tsc --p tsconfig.json",
-    "buildAndStart": "npm run build && npm run node-watch",
+    "buildAndStart": "npm run build && npm run start",
     "watch-ts": "tsc -w --p tsconfig.json",
     "test": "nyc --reporter=text mocha test/**/*.ts --exit",
     "tslint": "tslint -c tslint.json -p tsconfig.json"

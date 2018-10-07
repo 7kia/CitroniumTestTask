@@ -11,21 +11,6 @@ class GameField extends React.Component<IGameFieldProps, {}> {
     super(props);
   }
 
-  private static playerIsMove(userId: number, leadingPlayerId: number): boolean {
-    return (userId === leadingPlayerId);
-  }
-
-  private static renderNameMovePlayer(name: string): JSX.Element {
-    return (
-      <b>{name}</b>
-    );
-  }
-  private static renderNamePlayer(name: string): JSX.Element {
-    return (
-      <b><u>{name}</u></b>
-    );
-  }
-
   public render(): JSX.Element {
     const game: IGame = this.props.game;
     return (

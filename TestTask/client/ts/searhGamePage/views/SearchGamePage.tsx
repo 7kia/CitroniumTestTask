@@ -6,15 +6,14 @@ import {RouteComponentProps as IRouteComponentProps} from "react-router-dom";
 import {bindActionCreators, Dispatch as IDispatch} from "redux";
 import {IStore} from "../../reducer";
 import {connect} from "react-redux";
-import {searchGame} from "../actions/games";
+import {searchGames} from "../actions/games";
 import SearchGameBar from "../components/SearchBar";
 import GameList from "../components/GameList";
 import {Col, Grid, Row} from "react-bootstrap";
 import {IGameReport} from "../../common/interfaces/gameReport";
-import {map} from "lodash";
 
 interface IActionProps {
-  searchGame: typeof searchGame;
+  searchGames: typeof searchGames;
 }
 
 interface ISearchGameViewState {
@@ -26,6 +25,7 @@ interface ISearchGameViewProps extends IActionProps, IRouteComponentProps<any> {
 }
 
 class SearchGameC extends React.Component<ISearchGameViewProps, ISearchGameViewState> {
+  private columnAmount: number = 3;
 
   constructor(props: ISearchGameViewProps) {
     super(props);
@@ -34,7 +34,6 @@ class SearchGameC extends React.Component<ISearchGameViewProps, ISearchGameViewS
       gameColumns: [],
     };
   }
-  private columnAmount: number = 3;
   private static generateColumnData(
     columnNumber: number,
     columnAmount: number,
@@ -58,7 +57,7 @@ class SearchGameC extends React.Component<ISearchGameViewProps, ISearchGameViewS
   };
 
   private redirectToGame: (gameId: number) => void  = (gameId: number) => {
-    this.props.history.push("/games?id=" + gameId);
+    this.props.history.push("/game/" + gameId);
   };
 
   // private generateGameList(): JSX.Element[] {
@@ -80,7 +79,7 @@ class SearchGameC extends React.Component<ISearchGameViewProps, ISearchGameViewS
       <div className="search-game-page w100">
         <div className="search-bar-container">
           <SearchGameBar
-            onGameSearch={this.props.searchGame}
+            onGameSearch={this.props.searchGames}
             updateGameList={this.updateGameList}
           />
         </div>
@@ -115,7 +114,7 @@ class SearchGameC extends React.Component<ISearchGameViewProps, ISearchGameViewS
 function mapActionsToProps(dispatch: IDispatch<IStore>): IActionProps {
   return bindActionCreators(
     {
-      searchGame,
+      searchGames,
     },
     dispatch,
   );

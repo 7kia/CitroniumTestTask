@@ -10,6 +10,7 @@ import {Game} from "../../db/Entity/Game";
 import {User} from "../../db/Entity/User";
 import {MyPosition} from "../../MyPosition";
 import {logger} from "../../Logger";
+import {MyDictionary} from "../../../../client/ts/consts/types";
 
 export class GameStrategies {
   public static async createGame(userId: number, size: number, res: Response): Promise<void> {
@@ -61,29 +62,45 @@ export class GameStrategies {
       try {
         let json: Array<{}> = [];
         for (const game of games) {
-          const creator: User = await GameManager.findUser(game.creatorGameId);
-          let participantName: string = null;
-          try {
-            const participant: User = await GameManager.findUser(game.participantId);
-            participantName = participant.name;
-          } catch (error) {
-
-          }
-
-          json.push({
-            id: game.id,
-            creatorName: creator.name,
-            participantName: participantName,
-            creatorId: game.creatorGameId,
-            participantId: game.participantId,
-            size: game.fieldSize,
-            time: game.time,
-            winPlayerId: game.winPlayerId,
-            gameState: game.gameState,
-          });
+          json.push(await this.generateGameJson(game, false));
         }
         resolve(JSON.stringify(json));
 
+      } catch (error) {
+        reject(error);
+      }
+      resolve(null);
+    });
+  }
+
+  private static generateGameJson(game: Game, needField: boolean): Promise<MyDictionary> {
+    return new Promise<MyDictionary>(async (resolve, reject) => {
+      try {
+        const creator: User = await GameManager.findUser(game.creatorGameId);
+        let participantName: string;
+        try {
+          const participant: User = await GameManager.findUser(game.participantId);
+          participantName = participant.name;
+        } catch (error) {
+          participantName = null;
+        }
+
+        let result: MyDictionary = {
+          id: game.id,
+          creatorName: creator.name,
+          participantName: participantName,
+          creatorId: game.creatorGameId,
+          participantId: game.participantId,
+          size: game.fieldSize,
+          time: game.time,
+          leadingPlayerId: game.leadingPlayerId,
+          winPlayerId: game.winPlayerId,
+          gameState: game.gameState,
+        };
+        if (needField) {
+          result.field = game.field;
+        }
+        resolve(result);
       } catch (error) {
         reject(error);
       }
@@ -194,5 +211,17 @@ export class GameStrategies {
       resolve();
     });
 
+  }
+
+  public static getGame(gameId: number, res: Response): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        const game: Game = await GameManager.findGameById(gameId);
+        res.status(200).json(await this.generateGameJson(game, true));
+      } catch (error) {
+        reject(error);
+      }
+      resolve();
+    });
   }
 }
