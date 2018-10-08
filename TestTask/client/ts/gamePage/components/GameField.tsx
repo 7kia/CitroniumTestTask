@@ -21,6 +21,7 @@ class GameField extends React.Component<IGameFieldProps, {}> {
   private generateCells(): JSX.Element[] {
     const game: IGame = this.props.game;
     const userId: number = parseInt(localStorage.getItem(USER_ID) as string, 10);
+    const disable: boolean = (game.leadingPlayerId !== userId);
     let cells: JSX.Element[] = [];
     const field: string[] = game.field;
     for (let y = 0; y < game.size; y++) {
@@ -36,6 +37,7 @@ class GameField extends React.Component<IGameFieldProps, {}> {
             takePlayerMove={this.props.takePlayerMove}
             sendMessage={this.props.sendMessage}
             updateGame={this.props.updateGame}
+            disable={disable}
           />,
         );
       }

@@ -139,7 +139,7 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
         </div>
 
         <div className="name-container">
-          <div className="creator-name-container">
+          <div className="player-name float-left">
             <div className="creator-name">
               X {game.creatorName}
             </div>
@@ -147,7 +147,7 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
               {CGamePageView.getPlayerState(game.creatorGameId, game)}
             </div>
           </div>
-          <div className="participant-name-container float-right">
+          <div className="player-name float-right tar">
             <div className="participant-name">
               {game.participantName} 0
             </div>
@@ -157,15 +157,18 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
           </div>
         </div>
 
-        <GameField
-          game={game}
-          userId={userId}
-          takePlayerMove={this.props.takePlayerMove}
-          sendMessage={this.sendMessage}
-          updateGame={this.updateGame}
-        />
+        <div className="tac">
+          <GameField
+            game={game}
+            userId={userId}
+            takePlayerMove={this.props.takePlayerMove}
+            sendMessage={this.sendMessage}
+            updateGame={this.updateGame}
+          />
+        </div>
 
-        <div className="timer-container tac">
+
+        <div className="timer-container tac pt-md pb-md">
           <div className="timer">
              {CGamePageView.getTimeToMinutes(game.time)} : {CGamePageView.getTimeToSeconds(game.time)}
           </div>

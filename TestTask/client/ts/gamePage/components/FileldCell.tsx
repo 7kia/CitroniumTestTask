@@ -1,6 +1,7 @@
 import * as React from "react";
 import {IGame} from "../interface/game";
 import {takePlayerMove} from "../actions/game";
+import {Button} from "react-bootstrap";
 
 interface IFieldCellProps {
   key: number;
@@ -12,6 +13,7 @@ interface IFieldCellProps {
   updateGame: (game: IGame) => void;
   sendMessage: (message: string) => void;
   takePlayerMove: typeof takePlayerMove;
+  disable: boolean;
 }
 
 class FieldCell extends React.Component<IFieldCellProps, {}> {
@@ -37,10 +39,11 @@ class FieldCell extends React.Component<IFieldCellProps, {}> {
   public render(): JSX.Element {
     const key: number = this.props.key;
     const cellValue: string = this.props.cellValue;
+    const disable: boolean = this.props.disable;
     return (
-      <div className="cell" key={key} onClick={this.takePlayerMove}>
+      <Button className="cell tac" key={key} onClick={this.takePlayerMove} disabled={disable}>
         {cellValue}
-      </div>
+      </Button>
     );
   }
 }

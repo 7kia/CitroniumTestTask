@@ -49,13 +49,13 @@ class Header extends React.Component<IHeaderProps, {}> {
             <Navbar inverse className="m-0 fg-0 fs-0 fb-a">
                 <Navbar.Header>
                     <Navbar.Brand>
-                        <LinkContainer to="/" exact activeClassName="">
-                            <span>MyApp</span>
+                        <LinkContainer to="/start-page" activeClassName="">
+                            <span>TicTacToe</span>
                         </LinkContainer>
                     </Navbar.Brand>
                 </Navbar.Header>
 
-                { this.renderLinks() }
+                {this.renderLinks()}
             </Navbar>
         );
     }
