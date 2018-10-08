@@ -40,3 +40,28 @@ export const getGame = (gameId: number, updateGame: Function, sendMessage: Funct
   };
 };
 
+export const takePlayerMove = (
+  x: number,
+  y: number,
+  userId: number,
+  gameId: number,
+  updateGame: Function,
+  sendMessage: Function,
+) => {
+  return (dispatch: IDispatch<IStore>) => {
+    const row: number = y;
+    const column: number = x;
+    return apiPOST(BACKEND_SERVER_ADDRESS + "/api/game/take-player-move", {column, row, userId, gameId})
+      .then((data: MyDictionary) => {
+        if (data.hasOwnProperty("message")) {
+          sendMessage((data as MyDictionary).message);
+        } else {
+          updateGame();
+        }
+      })
+      .catch((err: any) => {
+        // TODO: add logging
+      });
+  };
+};
+

@@ -3,7 +3,7 @@ import {USER_ID} from "../../consts/auth";
 import {Button} from "react-bootstrap";
 import GameField from "../components/GameField";
 import {IGame} from "../interface/game";
-import {getGame, surrender} from "../actions/game";
+import {getGame, surrender, takePlayerMove} from "../actions/game";
 import {bindActionCreators, Dispatch as IDispatch} from "redux";
 import {RouteComponentProps as IRouteComponentProps} from "react-router-dom";
 import {IStore} from "../../reducer";
@@ -12,6 +12,7 @@ import {connect} from "react-redux";
 interface IActionProps {
   surrender: typeof surrender;
   getGame: typeof getGame;
+  takePlayerMove: typeof takePlayerMove;
 }
 
 interface IGamePageViewState {
@@ -49,6 +50,7 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
       game: emptyGame,
       errorMessage: null,
     };
+    this.tick();
   }
 
   public componentDidMount() {
@@ -81,7 +83,6 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
   private renderBackButton(): JSX.Element {
     return (
       <Button
-        className="float-right"
         bsStyle="primary"
         bsSize="lg"
         onClick={this.redirectToSearchGamePage}
@@ -99,7 +100,6 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
   private renderSurrenderButton(): JSX.Element {
     return (
       <Button
-        className="float-right"
         bsStyle="primary"
         bsSize="lg"
         onClick={this.surrender}
@@ -133,7 +133,7 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
     const game: IGame = this.state.game;
     const errorMessage: string | null = this.state.errorMessage;
     return (
-      <div className="game-page">
+      <div className="game-page m-a">
         <div className="error-message-container">
           {errorMessage ? errorMessage : ""}
         </div>
@@ -157,14 +157,21 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
           </div>
         </div>
 
-        <GameField game={game}/>
-        <div className="timer-container">
+        <GameField
+          game={game}
+          userId={userId}
+          takePlayerMove={this.props.takePlayerMove}
+          sendMessage={this.sendMessage}
+          updateGame={this.updateGame}
+        />
+
+        <div className="timer-container tac">
           <div className="timer">
              {CGamePageView.getTimeToMinutes(game.time)} : {CGamePageView.getTimeToSeconds(game.time)}
           </div>
-
         </div>
-        <div className="buttons">
+
+        <div className="buttons tac">
           {
             ((userId === game.creatorGameId) || (userId === game.participantId))
               ? this.renderSurrenderButton()
@@ -180,6 +187,7 @@ function mapActionsToProps(dispatch: IDispatch<IStore>): IActionProps {
   return bindActionCreators({
     surrender,
     getGame,
+    takePlayerMove,
   }, dispatch);
 }
 const GamePageView = connect(undefined, mapActionsToProps)(CGamePageView);
