@@ -1,5 +1,6 @@
 import * as React from "react";
 import {IGameReport} from "../interfaces/gameReport";
+import MyTimer from "./Timer";
 
 interface IGameReportProps {
   gameReport: IGameReport;
@@ -44,7 +45,7 @@ class GameReport extends React.Component<IGameReportProps, {}> {
         </div>
         <div>
           <div className="game-time tac">
-            {gameReport.time / 1000 / 60}:{gameReport.time / 1000}
+            <MyTimer milliseconds={gameReport.time}/>
           </div>
         </div>
       </div>

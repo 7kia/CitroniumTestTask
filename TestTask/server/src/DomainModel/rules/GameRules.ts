@@ -166,10 +166,12 @@ class GameRules {
   }
 
   private static validateSize(size: number): boolean {
-    if (size > 2) {
+    const startInterval: number = 3;
+    const endInterval: number = 12;
+    if (Helpers.between(size, startInterval, endInterval)) {
       return true;
     }
-    throw new Error("Size must be more 2");
+    throw new Error("Size must belong to interval [" + startInterval + "; " + endInterval + "]");
   }
 
   private static userPlay(user: User) {

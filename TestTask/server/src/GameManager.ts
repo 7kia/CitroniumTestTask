@@ -257,8 +257,10 @@ class GameManager {
       try {
         if (winnerId !== GameManager.NO_WINNER) {
           GameManager.signWinner(newGameData, winnerId, game.creatorGameId);
+          newGameData.setValue("leading_player_id", null);
         } else if (GameRules.allCellFilled(game)) {
           newGameData.setValue("game_state", GameState.Draw);
+          newGameData.setValue("leading_player_id", null);
         } else {
           GameManager.swapMoveLaw(game);
           newGameData.setValue("leading_player_id", game.leadingPlayerId);
@@ -312,6 +314,7 @@ class GameManager {
         let newGameData: DataForCreation = new Dictionary<string, any>();
         newGameData.setValue("access_token", accessToken);
         newGameData.setValue("leading_player_id", creatorId);
+        newGameData.setValue("field_size", fieldSize);
         newGameData.setValue("field", GameManager.generateField(fieldSize));
 
         await postgreSqlManager.games.create(newGameData);

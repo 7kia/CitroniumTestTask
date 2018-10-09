@@ -42,7 +42,7 @@ class StartPageViewC extends React.Component<IStartPageViewProps, IStartPageView
   }
 
   private redirectToGame = (gameId: number) => {
-    this.props.history.push("/games?id=" + gameId);
+    this.props.history.push("/game/" + gameId);
   };
 
   private setIncompleteGame = (data: MyDictionary) => {
@@ -62,7 +62,7 @@ class StartPageViewC extends React.Component<IStartPageViewProps, IStartPageView
   };
 
   private openGamePage = () => {
-    this.props.history.push("/games?id="  + this.state.gameData.id);
+    this.props.history.push("/game/"  + this.state.gameData.id);
   };
 
   public render(): JSX.Element {
@@ -117,7 +117,7 @@ class StartPageViewC extends React.Component<IStartPageViewProps, IStartPageView
 function mapActionsToProps(dispatch: IDispatch<IStore>): IActionProps {
   return bindActionCreators({
     getIncompleteGameUserId,
-    createGame
+    createGame,
   }, dispatch);
 }
 

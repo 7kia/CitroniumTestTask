@@ -60,20 +60,6 @@ class SearchGameC extends React.Component<ISearchGameViewProps, ISearchGameViewS
     this.props.history.push("/game/" + gameId);
   };
 
-  // private generateGameList(): JSX.Element[] {
-  //   console.log(this.state.gameColumns);
-  //   return map(this.state.gameColumns, (columnData: IGameReport[]) => {
-  //     return (
-  //       <Col md={4}>
-  //         <GameList
-  //           games={columnData}
-  //           redirectToGame={this.redirectToGame}
-  //         />
-  //       </Col>
-  //     );
-  //   });
-  // }
-
   public render(): JSX.Element {
     return (
       <div className="search-game-page w100">

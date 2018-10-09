@@ -21,11 +21,15 @@ class GameField extends React.Component<IGameFieldProps, {}> {
   private generateCells(): JSX.Element[] {
     const game: IGame = this.props.game;
     const userId: number = parseInt(localStorage.getItem(USER_ID) as string, 10);
-    const disable: boolean = (game.leadingPlayerId !== userId);
     let cells: JSX.Element[] = [];
     const field: string[] = game.field;
     for (let y = 0; y < game.size; y++) {
       for (let x = 0; x < game.size; x++) {
+        const disable: boolean =
+          (game.leadingPlayerId !== userId)
+          || (game.participantId === null)
+          || (field[y][x] !== "?");
+
         cells.push(
           <FieldCell
             key={x + y * game.size}

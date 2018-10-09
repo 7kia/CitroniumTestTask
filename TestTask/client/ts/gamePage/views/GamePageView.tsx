@@ -2,12 +2,13 @@ import * as React from "react";
 import {USER_ID} from "../../consts/auth";
 import {Button} from "react-bootstrap";
 import GameField from "../components/GameField";
-import {IGame} from "../interface/game";
+import {IGame, IOldGameData} from "../interface/game";
 import {getGame, surrender, takePlayerMove} from "../actions/game";
 import {bindActionCreators, Dispatch as IDispatch} from "redux";
 import {RouteComponentProps as IRouteComponentProps} from "react-router-dom";
 import {IStore} from "../../reducer";
 import {connect} from "react-redux";
+import MyTimer from "../../common/components/Timer";
 
 interface IActionProps {
   surrender: typeof surrender;
@@ -18,6 +19,8 @@ interface IActionProps {
 interface IGamePageViewState {
   gameId: number;
   game: IGame;
+  oldGameData: IOldGameData;
+  time: number;
   errorMessage: string | null;
 }
 
@@ -45,17 +48,40 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
       winPlayerId: -1,
       gameState: -1,
     };
+    const emptyOldGameData: IOldGameData = {
+      creatorGameId: -1,
+      participantId: null,
+      leadingPlayerId: null,
+      winPlayerId: null,
+      gameState: 0,
+    };
     this.state = {
       gameId: data.id,
       game: emptyGame,
+      time: 0,
+      oldGameData: emptyOldGameData,
       errorMessage: null,
     };
-    this.tick();
+
+    this.getGame();
+    this.setOldGameData();
+  }
+
+  private setOldGameData() {
+    const game: IGame = this.state.game;
+    const oldGameData: IOldGameData = {
+      creatorGameId: game.creatorGameId,
+      participantId: game.participantId,
+      leadingPlayerId: game.leadingPlayerId,
+      winPlayerId: game.winPlayerId,
+      gameState: game.gameState,
+    };
+    this.setState({oldGameData: oldGameData});
   }
 
   public componentDidMount() {
     this.timerId = setInterval(
-      () => this.tick(),
+      () => this.getGame(),
       1000,
     );
   }
@@ -64,13 +90,36 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
     clearInterval(this.timerId);
   }
 
-  private tick() {
+  private getGame() {
     this.props.getGame(this.state.gameId, this.updateGame, this.sendMessage);
+    if (this.state.game.gameState === 0) {
+      clearInterval(this.timerId);
+    }
   }
 
   private updateGame: (game: IGame) => void = (game: IGame) => {
-    this.setState({game: game, errorMessage: null});
+    this.setState({game: game, errorMessage: null, time: game.time});
+    if (this.gameUpdated()) {
+      this.setOldGameData();
+      // TODO: notifications
+    }
+    this.updateTimer(game.time);
   };
+
+  private updateTimer: (time: number) => void = (time: number) => {
+    this.setState({time: time});
+  };
+
+  private gameUpdated(): boolean {
+    const game: IGame = this.state.game;
+    const oldGameData: IOldGameData = this.state.oldGameData;
+    return (
+      (oldGameData.participantId !== game.participantId)
+      || (oldGameData.leadingPlayerId !== game.leadingPlayerId)
+      || (oldGameData.winPlayerId !== game.winPlayerId)
+      || (oldGameData.gameState !== game.gameState)
+    );
+  }
 
   private sendMessage: (message: string) => void = (message: string) => {
     this.setState({game: this.state.game, errorMessage: message});
@@ -110,7 +159,7 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
   }
 
   private static getPlayerState(playerId: number, game: IGame): string {
-    if (playerId) {
+    if (playerId !== null) {
       if (playerId === game.winPlayerId) {
         return "Winner";
       } else if (playerId === game.leadingPlayerId) {
@@ -120,67 +169,62 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
     return "";
   }
 
-  private static getTimeToSeconds(milliseconds: number): number {
-    return milliseconds / 1000;
-  }
-
-  private static getTimeToMinutes(milliseconds: number): number {
-    return CGamePageView.getTimeToSeconds(milliseconds) / 60;
-  }
-
   public render(): JSX.Element {
     const userId: number = parseInt(localStorage.getItem(USER_ID) as string, 10);
     const game: IGame = this.state.game;
     const errorMessage: string | null = this.state.errorMessage;
+    const isError: boolean = errorMessage !== null;
     return (
       <div className="game-page m-a">
-        <div className="error-message-container">
-          {errorMessage ? errorMessage : ""}
+        <div className="error-message-container tac">
+          {isError ? errorMessage : ""}
         </div>
+        {!isError
+          ? <div className="game-page-content">
+              <div className="name-container">
+                <div className="player-name float-left">
+                  <div className="creator-name">
+                    X {game.creatorName}
+                  </div>
+                  <div className="creator-state">
+                    {CGamePageView.getPlayerState(game.creatorGameId, game)}
+                  </div>
+                </div>
+                <div className="player-name float-right tar">
+                  <div className="participant-name">
+                    {game.participantName} 0
+                  </div>
+                  <div className="participant-state">
+                    {CGamePageView.getPlayerState(game.participantId, game)}
+                  </div>
+                </div>
+              </div>
 
-        <div className="name-container">
-          <div className="player-name float-left">
-            <div className="creator-name">
-              X {game.creatorName}
+              <div className="tac">
+                <GameField
+                  game={game}
+                  userId={userId}
+                  takePlayerMove={this.props.takePlayerMove}
+                  sendMessage={this.sendMessage}
+                  updateGame={this.updateGame}
+                />
+              </div>
+
+              <div className="timer-container tac pt-md pb-md">
+                <MyTimer milliseconds={game.time}/>
+              </div>
+
+              <div className="buttons tac">
+                {
+                  ((userId === game.creatorGameId) || (userId === game.participantId))
+                    ? this.renderSurrenderButton()
+                    : this.renderBackButton()
+                }
+              </div>
             </div>
-            <div className="creator-state">
-              {CGamePageView.getPlayerState(game.creatorGameId, game)}
-            </div>
-          </div>
-          <div className="player-name float-right tar">
-            <div className="participant-name">
-              {game.participantName} 0
-            </div>
-            <div className="participant-state">
-              {CGamePageView.getPlayerState(game.participantId, game)}
-            </div>
-          </div>
-        </div>
+          : null
+        }
 
-        <div className="tac">
-          <GameField
-            game={game}
-            userId={userId}
-            takePlayerMove={this.props.takePlayerMove}
-            sendMessage={this.sendMessage}
-            updateGame={this.updateGame}
-          />
-        </div>
-
-
-        <div className="timer-container tac pt-md pb-md">
-          <div className="timer">
-             {CGamePageView.getTimeToMinutes(game.time)} : {CGamePageView.getTimeToSeconds(game.time)}
-          </div>
-        </div>
-
-        <div className="buttons tac">
-          {
-            ((userId === game.creatorGameId) || (userId === game.participantId))
-              ? this.renderSurrenderButton()
-              : this.renderBackButton()
-          }
-        </div>
       </div>
     );
   }

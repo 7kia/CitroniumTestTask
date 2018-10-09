@@ -39,7 +39,7 @@ class CreateGameForm extends React.Component<ICreateGameFormProps, ICreateGameFo
     super(props);
 
     this.state = {
-      createError: null
+      createError: null,
     };
   }
 
@@ -49,7 +49,7 @@ class CreateGameForm extends React.Component<ICreateGameFormProps, ICreateGameFo
 
   private submit: ISubmitHandler<IFormData, ICreateGameFormProps, {}> = (formData: IFormData): void => {
     this.props.onSubmit(formData, this.setErrorMessage);
-  }
+  };
 
   private renderCreateError(error: string): JSX.Element {
     return <Alert bsStyle="warning">{error}</Alert>;
@@ -72,7 +72,8 @@ class CreateGameForm extends React.Component<ICreateGameFormProps, ICreateGameFo
             className="float-right"
             bsStyle="primary"
             bsSize="lg"
-            onClick={this.props.closePopup}>
+            onClick={this.props.closePopup}
+          >
             Cancel
           </Button>
         </div>

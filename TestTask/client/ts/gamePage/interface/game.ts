@@ -14,3 +14,11 @@ export interface IGame {
   gameState: number;
   field: string[];
 }
+
+export interface IOldGameData {
+  creatorGameId: number;
+  participantId: number | null;
+  leadingPlayerId: number | null;
+  winPlayerId: number | null;
+  gameState: number;
+}

@@ -23,7 +23,7 @@ export const getIncompleteGameUserId = (userId: number, onSuccess: Function) => 
   return (dispatch: IDispatch<IStore>) => {
       dispatch<IAction>(gameRequestStart);
 
-      return apiGET(BACKEND_SERVER_ADDRESS + "/api/game/get-user-incomplete-game/", {userId})
+      return apiGET(BACKEND_SERVER_ADDRESS + "/api/game/get-user-incomplete-game", {userId})
         .then((data: MyDictionary) => {
           if (data.hasOwnProperty("message")) {
             dispatch<IAction>(gameRequestError(data.message));

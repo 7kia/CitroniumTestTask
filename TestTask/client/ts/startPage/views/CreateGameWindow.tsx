@@ -10,7 +10,7 @@ interface ICreateGameWindowProps {
   createGame: (
     gameData: ICreateGameData,
     redirectToGame: Function,
-    handleError: Function
+    handleError: Function,
   ) => void;
   redirectToGame: (gameId: number) => void;
   show: boolean;
@@ -28,9 +28,8 @@ class CreateGameWindow extends React.Component<ICreateGameWindowProps, ICreateGa
   private onSubmit = (formData: IFormData, handleError: (message: string) => void): void => {
     let gameData: ICreateGameData = {
       userId: parseInt(localStorage.getItem(USER_ID) as string, 10),
-      size: parseInt(formData.size, 10)
+      size: parseInt(formData.size, 10),
     };
-    console.log(formData.size);
     this.props.createGame(gameData, this.props.redirectToGame, handleError);
   };
 
