@@ -5,14 +5,21 @@ import {Dispatch as IDispatch} from "redux";
 import {IStore} from "../../reducer";
 import {IGame} from "../interface/game";
 
-export const surrender = (userId: number, gameId: number) => {
+export const surrender = (
+  userId: number,
+  gameId: number,
+  updateGame: Function,
+  sendMessage: Function,
+) => {
   return (dispatch: IDispatch<IStore>) => {
     return apiPOST(BACKEND_SERVER_ADDRESS + "/api/game/set-loser/", {userId, gameId})
       .then((data: MyDictionary) => {
         console.log(data);
         if (data.hasOwnProperty("message")) {
           // TODO: add logging
+          sendMessage((data as MyDictionary).message);
         } else {
+          updateGame();
           // TODO: add logging
         }
       })

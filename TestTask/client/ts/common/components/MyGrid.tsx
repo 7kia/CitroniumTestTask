@@ -4,7 +4,7 @@ import {CSSProperties} from "react";
 interface IMyGridProps {
   items: JSX.Element[];
   columnAmount: number;
-  rowAmount: number;
+  rowAmount: number | null;
 }
 
 class MyGrid extends React.Component<IMyGridProps, {}> {

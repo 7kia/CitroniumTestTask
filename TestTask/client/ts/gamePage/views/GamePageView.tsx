@@ -9,6 +9,8 @@ import {RouteComponentProps as IRouteComponentProps} from "react-router-dom";
 import {IStore} from "../../reducer";
 import {connect} from "react-redux";
 import MyTimer from "../../common/components/Timer";
+import YouMoveNotification from "./YouMoveNotification";
+import GameStateNotification from "./GameStateNotification";
 
 interface IActionProps {
   surrender: typeof surrender;
@@ -22,6 +24,8 @@ interface IGamePageViewState {
   oldGameData: IOldGameData;
   time: number;
   errorMessage: string | null;
+  showYouMoveNotification: boolean;
+  showGameStateNotification: boolean;
 }
 
 interface IGamePageViewProps extends IActionProps, IRouteComponentProps<any> {
@@ -61,6 +65,8 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
       time: 0,
       oldGameData: emptyOldGameData,
       errorMessage: null,
+      showYouMoveNotification: false,
+      showGameStateNotification: false,
     };
 
     this.getGame();
@@ -81,7 +87,11 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
 
   public componentDidMount() {
     this.timerId = setInterval(
-      () => this.getGame(),
+      () => {
+        if (this.state.game.gameState <= 0) {
+          this.getGame();
+        }
+      },
       1000,
     );
   }
@@ -92,7 +102,7 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
 
   private getGame() {
     this.props.getGame(this.state.gameId, this.updateGame, this.sendMessage);
-    if (this.state.game.gameState === 0) {
+    if (this.state.game.gameState > 0) {
       clearInterval(this.timerId);
     }
   }
@@ -101,10 +111,26 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
     this.setState({game: game, errorMessage: null, time: game.time});
     if (this.gameUpdated()) {
       this.setOldGameData();
-      // TODO: notifications
+
+      const userId: number = parseInt(localStorage.getItem(USER_ID) as string, 10);
+      const gameData: IGame = this.state.game;
+      if ((gameData.creatorGameId === userId) || (gameData.participantId === userId)) {
+        this.showNotification();
+      }
     }
     this.updateTimer(game.time);
   };
+
+  private showNotification() {
+    const userId: number = parseInt(localStorage.getItem(USER_ID) as string, 10);
+    const game: IGame = this.state.game;
+
+    if (game.gameState > 0) {
+      this.toggleShowGameStateNotification();
+    } else if (game.leadingPlayerId === userId) {
+      this.toggleShowYouMoveNotification();
+    }
+  }
 
   private updateTimer: (time: number) => void = (time: number) => {
     this.setState({time: time});
@@ -129,6 +155,10 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
     this.props.history.push("/search-game");
   };
 
+  private redirectToStartPage: () => void = () => {
+    this.props.history.push("/start-page");
+  };
+
   private renderBackButton(): JSX.Element {
     return (
       <Button
@@ -143,7 +173,7 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
 
   private surrender() {
     const userId: number = parseInt(localStorage.getItem(USER_ID) as string, 10);
-    this.props.surrender(userId, this.state.game.id);
+    this.props.surrender(userId, this.state.game.id, this.updateGame, this.sendMessage);
   }
 
   private renderSurrenderButton(): JSX.Element {
@@ -153,7 +183,7 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
         bsSize="lg"
         onClick={this.surrender}
       >
-        Back
+        Surrender
       </Button>
     );
   }
@@ -169,22 +199,64 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
     return "";
   }
 
+  private toggleShowYouMoveNotification: () => void = () => {
+    this.setState({
+      showYouMoveNotification: !this.state.showYouMoveNotification
+    });
+  };
+
+  private toggleShowGameStateNotification: () => void = () => {
+    this.setState({
+      showGameStateNotification: !this.state.showGameStateNotification
+    });
+  };
+
+  private generateGameStateMessage: () => string = () => {
+    const game: IGame = this.state.game;
+    const userId: number = parseInt(localStorage.getItem(USER_ID) as string, 10);
+
+    const isWinner: boolean = game.winPlayerId !== null;
+    const draw: boolean = game.gameState === 3;
+    const userIsCreator: boolean = game.creatorGameId === userId;
+    const userIsParticipant: boolean = game.participantId === userId;
+    if (isWinner) {
+      if (game.winPlayerId === userId) {
+        return "You win";
+      } else if (userIsParticipant || userIsCreator) {
+        return "You loser";
+      }
+    } else if (draw) {
+      return "Draw";
+    }
+    return "";
+  };
+
+  private renderName(name: string): string {
+    if (name) {
+      return name;
+    }
+    return "No player";
+  }
+
   public render(): JSX.Element {
     const userId: number = parseInt(localStorage.getItem(USER_ID) as string, 10);
     const game: IGame = this.state.game;
     const errorMessage: string | null = this.state.errorMessage;
     const isError: boolean = errorMessage !== null;
+    const userParticipantToGame: boolean = ((userId === game.creatorGameId) || (userId === game.participantId));
+
     return (
       <div className="game-page m-a">
         <div className="error-message-container tac">
           {isError ? errorMessage : ""}
         </div>
+
         {!isError
           ? <div className="game-page-content">
               <div className="name-container">
                 <div className="player-name float-left">
                   <div className="creator-name">
-                    X {game.creatorName}
+                    X {this.renderName(game.creatorName)}
                   </div>
                   <div className="creator-state">
                     {CGamePageView.getPlayerState(game.creatorGameId, game)}
@@ -192,7 +264,7 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
                 </div>
                 <div className="player-name float-right tar">
                   <div className="participant-name">
-                    {game.participantName} 0
+                    {this.renderName(game.participantName)} 0
                   </div>
                   <div className="participant-state">
                     {CGamePageView.getPlayerState(game.participantId, game)}
@@ -216,11 +288,28 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
 
               <div className="buttons tac">
                 {
-                  ((userId === game.creatorGameId) || (userId === game.participantId))
+                  (userParticipantToGame && (game.participantId !== null))
                     ? this.renderSurrenderButton()
                     : this.renderBackButton()
                 }
               </div>
+
+            {this.state.showYouMoveNotification
+              ? <YouMoveNotification
+                  closePopup={this.toggleShowYouMoveNotification}
+                  show={this.state.showYouMoveNotification}
+                />
+              : null
+            }
+            {this.state.showGameStateNotification
+              ? <GameStateNotification
+                  closePopup={this.toggleShowGameStateNotification}
+                  show={this.state.showGameStateNotification}
+                  redirectToStartPage={this.redirectToStartPage}
+                  message={this.generateGameStateMessage()}
+                />
+              : null
+            }
             </div>
           : null
         }

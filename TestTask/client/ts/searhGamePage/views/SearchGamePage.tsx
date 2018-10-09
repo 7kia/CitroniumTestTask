@@ -11,6 +11,8 @@ import SearchGameBar from "../components/SearchBar";
 import GameList from "../components/GameList";
 import {Col, Grid, Row} from "react-bootstrap";
 import {IGameReport} from "../../common/interfaces/gameReport";
+import MyGrid from "../../common/components/MyGrid";
+import GameItem from "../components/GameItem";
 
 interface IActionProps {
   searchGames: typeof searchGames;
@@ -18,6 +20,7 @@ interface IActionProps {
 
 interface ISearchGameViewState {
   gameColumns: IGameReport[][];
+  games: IGameReport[]
 }
 
 interface ISearchGameViewProps extends IActionProps, IRouteComponentProps<any> {
@@ -25,36 +28,33 @@ interface ISearchGameViewProps extends IActionProps, IRouteComponentProps<any> {
 }
 
 class SearchGameC extends React.Component<ISearchGameViewProps, ISearchGameViewState> {
-  private columnAmount: number = 3;
+  private columnAmount: number = 4;
 
   constructor(props: ISearchGameViewProps) {
     super(props);
 
     this.state = {
       gameColumns: [],
+      games: [],
     };
-  }
-  private static generateColumnData(
-    columnNumber: number,
-    columnAmount: number,
-    games: IGameReport[],
-  ): IGameReport[] {
-    let columnData: IGameReport[] = [];
-    let rowNumber: number = 0;
-    while ((columnNumber + (rowNumber * columnAmount)) < games.length) {
-      columnData.push(games[columnNumber + (rowNumber * columnAmount)]);
-      rowNumber++;
-    }
-    return columnData;
   }
 
   private updateGameList: (games: IGameReport[]) => void = (games: IGameReport[]) => {
-    const gameColumns: IGameReport[][] = [];
-    for (let i = 0; i < this.columnAmount; i++) {
-      gameColumns.push(SearchGameC.generateColumnData(i, this.columnAmount, games));
-    }
-    this.setState({gameColumns});
+    this.setState({games});
   };
+
+  private generateGameItems(): JSX.Element[] {
+    const games: IGameReport[] = this.state.games;
+    let gridElements: JSX.Element[] = [];
+    for (let i = 0; i < games.length; i++) {
+      gridElements.push(
+        <div className="m-a">
+          <GameItem game={games[i]} key={games[i].id} redirectToGame={this.redirectToGame}/>
+        </div>,
+      );
+    }
+    return gridElements;
+  }
 
   private redirectToGame: (gameId: number) => void  = (gameId: number) => {
     this.props.history.push("/game/" + gameId);
@@ -70,26 +70,7 @@ class SearchGameC extends React.Component<ISearchGameViewProps, ISearchGameViewS
           />
         </div>
         <Grid className="pv-xxxl h100">
-          <Row>
-            <Col md={4}>
-              <GameList
-                games={this.state.gameColumns[0]}
-                redirectToGame={this.redirectToGame}
-              />
-            </Col>
-            <Col md={4}>
-              <GameList
-                games={this.state.gameColumns[1]}
-                redirectToGame={this.redirectToGame}
-              />
-            </Col>
-            <Col md={4}>
-              <GameList
-                games={this.state.gameColumns[2]}
-                redirectToGame={this.redirectToGame}
-              />
-            </Col>
-          </Row>
+          <MyGrid items={this.generateGameItems()} columnAmount={this.columnAmount} rowAmount={null}/>
         </Grid>
       </div>
 
