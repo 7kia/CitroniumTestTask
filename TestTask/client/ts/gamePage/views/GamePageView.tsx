@@ -171,10 +171,10 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
     );
   }
 
-  private surrender() {
+  private surrender: () => void = () => {
     const userId: number = parseInt(localStorage.getItem(USER_ID) as string, 10);
     this.props.surrender(userId, this.state.game.id, this.updateGame, this.sendMessage);
-  }
+  };
 
   private renderSurrenderButton(): JSX.Element {
     return (
@@ -201,13 +201,13 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
 
   private toggleShowYouMoveNotification: () => void = () => {
     this.setState({
-      showYouMoveNotification: !this.state.showYouMoveNotification
+      showYouMoveNotification: !this.state.showYouMoveNotification,
     });
   };
 
   private toggleShowGameStateNotification: () => void = () => {
     this.setState({
-      showGameStateNotification: !this.state.showGameStateNotification
+      showGameStateNotification: !this.state.showGameStateNotification,
     });
   };
 

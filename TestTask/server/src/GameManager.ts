@@ -228,7 +228,6 @@ class GameManager {
 
           const winnerId: number = GameRules.findWinner(game, position);
           await GameManager.setGameState(winnerId, game, newGameData);
-
           await postgreSqlManager.games.update(game.id, newGameData);
         } else {
           logger.error(
@@ -371,13 +370,10 @@ class GameManager {
     let game: Game = null;
     let gameEnd: boolean = false;
     while (!gameEnd) {
-
       let foundGames: Game[] = await postgreSqlManager.games.find(searchGameData);
       game = foundGames[0];
 
-      if (game.winPlayerId) {
-        await GameManager.sendGameReport(game.creatorGameId, game.id);
-        await GameManager.sendGameReport(game.participantId, game.id);
+      if (game.gameState > 0) {
         gameEnd = true;
       } else {
         game.time = Date.now() - startTime;
@@ -397,21 +393,8 @@ class GameManager {
     await GameManager.unconnectPlayer(game.creatorGameId);
     await GameManager.unconnectPlayer(game.participantId);
     if (!game.winPlayerId && gameEnd) {
-      await GameManager.redirectToStartScreen(game.creatorGameId);
-      await GameManager.redirectToStartScreen(game.participantId);
       await postgreSqlManager.games.deleteGame(searchGameData);
     }
-  }
-  public static async redirectToStartScreen(playerId: number): Promise<void> {
-    logger.info(
-      "Redirect player with id=" + playerId + " to start screen.",
-    );
-  }
-  public static async sendGameReport(playerId: number, gameId: number): Promise<void> {
-    logger.info(
-      "Send game report with gameId=" + gameId
-      + " for player with id=" + playerId + ".",
-    );
   }
 
   public static getLeadingPlayerSign(game: Game): string {
@@ -456,9 +439,11 @@ class GameManager {
         if (game.participantId === userId) {
           newGameData.setValue("win_player_id", game.creatorGameId);
           newGameData.setValue("game_state", GameState.CreatorWin);
+          newGameData.setValue("leading_player_id", null);
         } else {
           newGameData.setValue("win_player_id", game.participantId);
           newGameData.setValue("game_state", GameState.ParticipantWin);
+          newGameData.setValue("leading_player_id", null);
         }
         await postgreSqlManager.games.update(gameId, newGameData);
       } catch (error) {
