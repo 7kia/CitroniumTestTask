@@ -28,7 +28,7 @@ export function request(method: RequestMethod , url: string, data?: IDictionary<
     let fetchOpts: RequestInit = {
         method: method,
         headers: defaultHeaders,
-        mode: "cors"
+        mode: "cors",
     };
 
     if (data) { fetchOpts.body = JSON.stringify(data);}
@@ -52,10 +52,6 @@ export function request(method: RequestMethod , url: string, data?: IDictionary<
                     throw new UnrecognizedStatusError("");
             }
         });
-    // .catch((err: any) => {
-    //     if (DEBUG) { console.info("FETCH ERROR:", err); }
-    //     throw err;
-    // });
 }
 
 export function apiGET(url: string, data: IDictionary<any>) {

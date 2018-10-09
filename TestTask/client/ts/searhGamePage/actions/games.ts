@@ -6,7 +6,7 @@ import {IStore} from "../../reducer";
 import {IAction} from "../../common/interfaces/action";
 import {createRequestActionTypes} from "../../common/helpers/actions";
 import {BACKEND_SERVER_ADDRESS} from "../../consts/server";
-import {apiGET} from "../../common/helpers/request";
+import {apiGET, apiPOST} from "../../common/helpers/request";
 import {Json, MyDictionary} from "../../consts/types";
 import {ISearchGameData} from "../interfaces/searchGame";
 import {IGameReport} from "../../common/interfaces/gameReport";
@@ -47,5 +47,29 @@ export const searchGames = (gameData: ISearchGameData, updateGameList: Function)
       .catch((err: any) => {
         dispatch<IAction>(gameRequestError(logUnknownErrorRequest("\"Search game\"")));
       });
+  };
+};
+
+export const connectUserToGame = (gameId: number, userId: number) => {
+  return (dispatch: IDispatch<IStore>) => {
+    dispatch<IAction>(gameRequestStart);
+    console.log(
+      "\"Connect user to game\" request start. Params: "
+      + "gameId=" + gameId +
+      + "userId=" + userId,
+    );
+    return apiPOST(BACKEND_SERVER_ADDRESS + "/api/game/connect-user-to-game/", {gameId, userId})
+    .then((data: string) => {
+      const json: Json = JSON.parse(data);
+      if (json.hasOwnProperty("message")) {
+        dispatch<IAction>(gameRequestError(logErrorRequest("\"Connect user to game\"", (json as MyDictionary).message)));
+      } else {
+        dispatch<IAction>(gameRequestSuccess);
+        logSuccessfulRequest("\"Connect user to game\"");
+      }
+    })
+    .catch((err: any) => {
+      dispatch<IAction>(gameRequestError(logUnknownErrorRequest("\"Connect user to game\"")));
+    });
   };
 };

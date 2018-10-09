@@ -424,7 +424,7 @@ describe("GameManager. " +
                   assert.deepEqual(game.field, newField);
                   assert.strictEqual(game.gameState, GameState.CreatorWin);
                   assert.strictEqual(game.winPlayerId, creator.id);
-                  assert.strictEqual(game.leadingPlayerId, creator.id);
+                  assert.strictEqual(game.leadingPlayerId, null);
 
                   await assertThrowsAsync(
                     async () => GameManager.takePlayerMove(participant.id, new MyPosition(2, 2), game.id),

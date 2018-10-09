@@ -26,6 +26,7 @@ class FieldCell extends React.Component<IFieldCellProps, {}> {
     const y: number = this.props.y;
     const userId: number = this.props.userId;
     const gameId: number = this.props.gameId;
+
     this.props.takePlayerMove(
       x,
       y,
@@ -41,7 +42,12 @@ class FieldCell extends React.Component<IFieldCellProps, {}> {
     const cellValue: string = this.props.cellValue;
     const disable: boolean = this.props.disable;
     return (
-      <Button className="cell tac" key={key} onClick={this.takePlayerMove} disabled={disable}>
+      <Button
+        className="cell tac"
+        key={key}
+        onClick={this.takePlayerMove}
+        disabled={disable}
+      >
         {cellValue}
       </Button>
     );

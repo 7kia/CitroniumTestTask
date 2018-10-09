@@ -122,7 +122,7 @@ export class GameStrategies {
 
           const foundGames: Game[] = await postgreSqlManager.games.find(gameData);
           const game: Game = foundGames[0];
-          res.status(200).json({accessToken: game.accessToken});
+          res.status(200);
         } else {
           res.status(400).json({message: "Connection failed"});
         }
@@ -203,6 +203,7 @@ export class GameStrategies {
   ): Promise<void> {
     return new Promise<void>(async (resolve, reject) => {
       try {
+        console.log("TakePlayerMove");
         await GameManager.takePlayerMove(userId, position, gameId);
         res.status(200);
       } catch (error) {

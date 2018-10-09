@@ -243,11 +243,11 @@ class GameRules {
     return new Promise<boolean>(async (resolve, reject) => {
       try {
         const game: Game = await GameManager.findGameById(gameId);
-
         if (!Helpers.between(column, 0, game.fieldSize - 1)
           || !Helpers.between(row, 0, game.fieldSize - 1)) {
           reject(new Error("Position out of range"));
         }
+        resolve(true);
       } catch (error) {
         reject(error);
       }

@@ -68,13 +68,13 @@ export const takePlayerMove = (
     const row: number = y;
     const column: number = x;
     console.log(
-      "\"Take player move\" request start. Data: "
-      + "x=" + column,
-      + "y=" + row,
-      + "userId=" + userId,
-      + "gameId=" + gameId,
+      "\"Take player move\" request start. Data:"
+      + " x=" + column
+      + " y=" + row
+      + " userId=" + userId
+      + " gameId=" + gameId,
     );
-    return apiPOST(BACKEND_SERVER_ADDRESS + "/api/game/take-player-move", {column, row, userId, gameId})
+    return apiPOST(BACKEND_SERVER_ADDRESS + "/api/game/take-player-move/", {column, row, userId, gameId})
       .then((data: MyDictionary) => {
         if (data.hasOwnProperty("message")) {
           sendMessage((data as MyDictionary).message);

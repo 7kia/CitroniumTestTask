@@ -288,7 +288,7 @@ class CGamePageView extends React.Component<IGamePageViewProps, IGamePageViewSta
 
               <div className="buttons tac">
                 {
-                  (userParticipantToGame && (game.participantId !== null))
+                  (userParticipantToGame && (game.participantId !== null) && (game.gameState <= 0))
                     ? this.renderSurrenderButton()
                     : this.renderBackButton()
                 }

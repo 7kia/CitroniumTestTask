@@ -215,6 +215,7 @@ class GameManager {
       const correspondToken: boolean = (player.accessToken === game.accessToken);
       const thisPlayerMove: boolean = (player.id === game.leadingPlayerId);
       const endGame: boolean = (game.gameState !== GameState.NoWinner);
+
       if (correspondToken && thisPlayerMove && !endGame) {
         const selectCell: string = game.field[position.y][position.x];
         if (selectCell === Cell.Empty) {
@@ -227,6 +228,7 @@ class GameManager {
 
           const winnerId: number = GameRules.findWinner(game, position);
           await GameManager.setGameState(winnerId, game, newGameData);
+
           await postgreSqlManager.games.update(game.id, newGameData);
         } else {
           logger.error(

@@ -6,21 +6,20 @@ import {RouteComponentProps as IRouteComponentProps} from "react-router-dom";
 import {bindActionCreators, Dispatch as IDispatch} from "redux";
 import {IStore} from "../../reducer";
 import {connect} from "react-redux";
-import {searchGames} from "../actions/games";
+import {connectUserToGame, searchGames} from "../actions/games";
 import SearchGameBar from "../components/SearchBar";
-import GameList from "../components/GameList";
-import {Col, Grid, Row} from "react-bootstrap";
 import {IGameReport} from "../../common/interfaces/gameReport";
 import MyGrid from "../../common/components/MyGrid";
 import GameItem from "../components/GameItem";
 
 interface IActionProps {
   searchGames: typeof searchGames;
+  connectUserToGame: typeof connectUserToGame;
 }
 
 interface ISearchGameViewState {
   gameColumns: IGameReport[][];
-  games: IGameReport[]
+  games: IGameReport[];
 }
 
 interface ISearchGameViewProps extends IActionProps, IRouteComponentProps<any> {
@@ -49,7 +48,12 @@ class SearchGameC extends React.Component<ISearchGameViewProps, ISearchGameViewS
     for (let i = 0; i < games.length; i++) {
       gridElements.push(
         <div className="m-a">
-          <GameItem game={games[i]} key={games[i].id} redirectToGame={this.redirectToGame}/>
+          <GameItem
+            game={games[i]}
+            key={games[i].id}
+            redirectToGame={this.redirectToGame}
+            connectUserToGame={this.props.connectUserToGame}
+          />
         </div>,
       );
     }
@@ -69,9 +73,9 @@ class SearchGameC extends React.Component<ISearchGameViewProps, ISearchGameViewS
             updateGameList={this.updateGameList}
           />
         </div>
-        <Grid className="pv-xxxl h100">
+        <div className="pv-xxxl h100">
           <MyGrid items={this.generateGameItems()} columnAmount={this.columnAmount} rowAmount={null}/>
-        </Grid>
+        </div>
       </div>
 
     );
@@ -82,6 +86,7 @@ function mapActionsToProps(dispatch: IDispatch<IStore>): IActionProps {
   return bindActionCreators(
     {
       searchGames,
+      connectUserToGame,
     },
     dispatch,
   );
