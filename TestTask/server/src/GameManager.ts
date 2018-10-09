@@ -392,7 +392,7 @@ class GameManager {
 
     await GameManager.unconnectPlayer(game.creatorGameId);
     await GameManager.unconnectPlayer(game.participantId);
-    if (!game.winPlayerId && gameEnd) {
+    if ((game.gameState <= 0) && gameEnd) {
       await postgreSqlManager.games.deleteGame(searchGameData);
     }
   }

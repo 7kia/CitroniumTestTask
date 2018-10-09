@@ -74,7 +74,9 @@ class SearchGameC extends React.Component<ISearchGameViewProps, ISearchGameViewS
           />
         </div>
         <div className="pv-xxxl h100">
-          <MyGrid items={this.generateGameItems()} columnAmount={this.columnAmount} rowAmount={null}/>
+          <div className="mh-a w75">
+            <MyGrid items={this.generateGameItems()} columnAmount={this.columnAmount} rowAmount={null}/>
+          </div>
         </div>
       </div>
 

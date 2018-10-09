@@ -4,6 +4,7 @@ import {USER_ID} from "../../consts/auth";
 import GameReport from "../../common/components/GameReport";
 import {IGameReport} from "../../common/interfaces/gameReport";
 import {connectUserToGame} from "../actions/games";
+import {IGame} from "../../gamePage/interface/game";
 
 interface IGameItemProps {
     game: IGameReport;
@@ -57,13 +58,14 @@ class GameItem extends React.Component<IGameItemProps, {}> {
 
   public render(): JSX.Element {
     const userId: number = parseInt(localStorage.getItem(USER_ID) as string, 10);
+    const game: IGameReport = this.props.game;
     const creatorId: number = this.props.game.creatorId;
     const participantId: number = this.props.game.participantId;
     const userPlayToGame: boolean = (userId === creatorId) || (userId === participantId);
     const gameHaveParticipant: boolean = (participantId !== null);
     const canParticipant: boolean = (
-      (userPlayToGame)
-      || (!userPlayToGame && !gameHaveParticipant)
+      ((userPlayToGame) || (!userPlayToGame && !gameHaveParticipant))
+      && (game.gameState <= 0)
     );
     return (
       <div className="game-item">
